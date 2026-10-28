@@ -1,7 +1,7 @@
 """
 Centralized configuration for the AI Research & Report Generation Agent.
 
-All paths, model names, constants, and tuneable parameters live here.
+Supports both containerized services (Docker Qdrant & PostgreSQL) and local embedded mode.
 """
 
 import os
@@ -26,7 +26,7 @@ ARCHITECTURE_GUIDELINES_MD = SAMPLE_DATA_DIR / "architecture_guidelines.md"
 DATABASE_COMPARISON_PDF = SAMPLE_DATA_DIR / "database_comparison.pdf"
 
 # ──────────────────────────────────────────────
-# Qdrant
+# Qdrant Vector DB Configuration
 # ──────────────────────────────────────────────
 QDRANT_COLLECTION_NAME = "research_documents"
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
@@ -34,25 +34,38 @@ EMBEDDING_DIMENSION = 384  # Dimension for all-MiniLM-L6-v2
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 100
 
+# Docker / Remote Qdrant connection URL
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+# Force local embedded storage (auto-fallback if Qdrant URL is unreachable)
+QDRANT_PREFER_EMBEDDED = os.getenv("QDRANT_PREFER_EMBEDDED", "false").lower() == "true"
+
 # ──────────────────────────────────────────────
-# LLM
+# Persistence & Checkpointing
+# ──────────────────────────────────────────────
+# Docker PostgreSQL connection URL
+POSTGRES_URL = os.getenv("POSTGRES_URL", "postgresql://postgres:postgrespassword@localhost:5432/research_agent")
+# SQLite local file fallback
+SQLITE_DB_URL = f"sqlite:///{CHECKPOINT_DB_PATH}"
+
+# ──────────────────────────────────────────────
+# LLM & Observability
 # ──────────────────────────────────────────────
 LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "gpt-4o-mini")
 LLM_TEMPERATURE = 0.2  # Low temperature for factual, deterministic outputs
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 # ──────────────────────────────────────────────
-# Agent Workflow
+# Agent Workflow Constants
 # ──────────────────────────────────────────────
 MAX_RESEARCH_ITERATIONS = 2  # Max re-search loops before forcing draft
 MIN_SUBQUESTIONS = 3  # Minimum subquestions the planner must generate
 TOP_K_SEARCH_RESULTS = 5  # Number of Qdrant results per query
 
 # ──────────────────────────────────────────────
-# Server
+# Server Configuration
 # ──────────────────────────────────────────────
-SERVER_HOST = "0.0.0.0"
-SERVER_PORT = 8000
+SERVER_HOST = os.getenv("SERVER_HOST", "0.0.0.0")
+SERVER_PORT = int(os.getenv("SERVER_PORT", "8000"))
 
 # ──────────────────────────────────────────────
 # Convenience Settings Object
@@ -67,6 +80,8 @@ class Settings:
             f"Settings(\n"
             f"  PROJECT_ROOT       = {PROJECT_ROOT}\n"
             f"  SAMPLE_DATA_DIR    = {SAMPLE_DATA_DIR}\n"
+            f"  QDRANT_URL         = {QDRANT_URL}\n"
+            f"  POSTGRES_URL       = {POSTGRES_URL}\n"
             f"  QDRANT_STORAGE     = {QDRANT_STORAGE_DIR}\n"
             f"  CHECKPOINT_DB      = {CHECKPOINT_DB_PATH}\n"
             f"  REPORTS_DIR        = {REPORTS_DIR}\n"
