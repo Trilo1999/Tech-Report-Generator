@@ -44,9 +44,9 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 # ──────────────────────────────────────────────
 # Agent Workflow
 # ──────────────────────────────────────────────
-MAX_RESEARCH_ITERATIONS = 2   # Max re-search loops before forcing draft
-MIN_SUBQUESTIONS = 3           # Minimum subquestions the planner must generate
-TOP_K_SEARCH_RESULTS = 5      # Number of Qdrant results per query
+MAX_RESEARCH_ITERATIONS = 2  # Max re-search loops before forcing draft
+MIN_SUBQUESTIONS = 3  # Minimum subquestions the planner must generate
+TOP_K_SEARCH_RESULTS = 5  # Number of Qdrant results per query
 
 # ──────────────────────────────────────────────
 # Server
@@ -57,6 +57,7 @@ SERVER_PORT = 8000
 # ──────────────────────────────────────────────
 # Convenience Settings Object
 # ──────────────────────────────────────────────
+
 
 class Settings:
     """Convenience wrapper — print to verify configuration."""

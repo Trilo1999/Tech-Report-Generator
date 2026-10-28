@@ -1,10 +1,10 @@
 # Software Design Specification (SDS)
 
-**Project Name**: AI Research & Report Generation Agent  
-**Document Version**: 1.0  
-**Status**: Approved  
-**Author**: Engineering Team  
-**Date**: October 2026  
+**Project Name**: AI Research & Report Generation Agent
+**Document Version**: 1.0
+**Status**: Approved
+**Author**: Engineering Team
+**Date**: October 2026
 
 ---
 
@@ -80,7 +80,7 @@ The system is designed around an autonomous, stateful agent orchestrated by **La
 ```mermaid
 flowchart TD
     START([User Topic / Goal]) --> N1[1. plan_research<br/>Decompose into ≥3 subquestions]
-    
+
     subgraph Evidence & Analytics Phase
         N1 --> N2[2. gather_evidence<br/>Internal Qdrant + External Sources]
         N2 --> N3[3. execute_calculations<br/>analyze_csv + calculate_cost]
@@ -98,9 +98,9 @@ flowchart TD
 
     UserDecision -- "revise" --> N7[7. revise_sections<br/>Preserve evidence; patch named sections]
     N7 --> N6
-    
+
     UserDecision -- "reject" --> N8([Workflow Terminated])
-    
+
     UserDecision -- "approve" --> N9[8. export_report<br/>Generate PDF / DOCX]
     N9 --> END([Final Report Exported])
 ```
@@ -236,7 +236,7 @@ sequenceDiagram
 
     User->>API: POST /research/start {"topic": "PostgreSQL vs MongoDB"}
     API->>Graph: invoke(initial_state, thread_id="t1")
-    
+
     Graph->>Graph: plan_research() -> Generate 4 subquestions
     Graph->>Tools: search_internal_documents()
     Tools->>Qdrant: Cosine vector query
@@ -244,20 +244,20 @@ sequenceDiagram
     Graph->>Tools: search_external_sources() -> [EXT-01]
     Graph->>Tools: analyze_csv() -> Pandas stats [CSV-01]
     Graph->>Tools: calculate_cost() -> TCO stats [COST-01]
-    
+
     Graph->>Graph: evaluate_evidence() -> Sufficiency: True
     Graph->>Graph: draft_report() -> Synthesize report with citations
-    
+
     Graph->>Checkpoint: Persist state snapshot at interrupt()
     Graph-->>API: Status: "review_pending", draft preview
     API-->>User: Present draft for review
-    
+
     User->>API: POST /research/review {"decision": "revise", "target_sections": ["Cost Analysis"]}
     API->>Graph: invoke(Command(resume=payload), thread_id="t1")
     Graph->>Graph: revise_sections() -> Rewrite only "Cost Analysis"
     Graph->>Checkpoint: Save revised snapshot at interrupt()
     Graph-->>API: Status: "review_pending", revised draft
-    
+
     User->>API: POST /research/review {"decision": "approved"}
     API->>Graph: invoke(Command(resume=payload), thread_id="t1")
     Graph->>Tools: generate_report(content, format="pdf")

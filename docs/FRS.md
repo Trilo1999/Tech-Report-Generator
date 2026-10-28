@@ -1,10 +1,10 @@
 # Functional Requirements Specification (FRS)
 
-**Project Name**: AI Research & Report Generation Agent  
-**Document Version**: 1.0  
-**Status**: Approved  
-**Author**: Engineering Team  
-**Date**: October 2026  
+**Project Name**: AI Research & Report Generation Agent
+**Document Version**: 1.0
+**Status**: Approved
+**Author**: Engineering Team
+**Date**: October 2026
 
 ---
 
