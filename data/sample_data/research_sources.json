@@ -1,0 +1,69 @@
+{
+  "sources": [
+    {
+      "id": "EXT-01",
+      "title": "Database Selection for SaaS: SQL vs NoSQL Trade-offs in 2024",
+      "url": "https://example-analyst.com/db-saas-tradeoffs-2024",
+      "author": "Dr. Sarah Mitchell",
+      "publication": "TechAnalyst Quarterly",
+      "date": "2024-03-15",
+      "reliability_score": 0.88,
+      "snippet": "For transactional SaaS platforms with complex joins and strong consistency requirements, PostgreSQL provides superior guarantees. MongoDB excels in document-heavy, read-intensive workloads with flexible schemas and horizontal scaling. Multi-tenant isolation in PostgreSQL is typically achieved via schema-per-tenant or row-level security, while MongoDB favors database-per-tenant for physical isolation."
+    },
+    {
+      "id": "EXT-02",
+      "title": "Multi-Tenancy Patterns for Cloud-Native Databases",
+      "url": "https://cloudarch-review.io/multi-tenancy-patterns",
+      "author": "James Chen",
+      "publication": "Cloud Architecture Review",
+      "date": "2024-06-22",
+      "reliability_score": 0.92,
+      "snippet": "The shared-database, separate-schema approach offers the best balance of isolation and operational efficiency for PostgreSQL deployments serving 100-10,000 tenants. For MongoDB, the database-per-tenant model provides strong isolation but introduces connection pool pressure beyond 500 tenants. Both approaches require careful index management and query routing."
+    },
+    {
+      "id": "EXT-03",
+      "title": "Performance Benchmarking: PostgreSQL 16 vs MongoDB 7 Under SaaS Workloads",
+      "url": "https://dbperformance-labs.org/pg16-vs-mongo7-saas",
+      "author": "Performance Labs Team",
+      "publication": "DB Performance Labs",
+      "date": "2024-08-10",
+      "reliability_score": 0.85,
+      "snippet": "Under mixed OLTP workloads typical of SaaS applications (70% reads, 30% writes), MongoDB 7 showed 15-20% lower read latency compared to PostgreSQL 16. However, PostgreSQL demonstrated more consistent write performance under high concurrency (200+ connections), with p99 write latency 18% lower than MongoDB. PostgreSQL's query planner advantage becomes significant with complex multi-table joins."
+    },
+    {
+      "id": "EXT-04",
+      "title": "Total Cost of Ownership: Managed Database Services Comparison",
+      "url": "https://finops-weekly.com/managed-db-tco-2024",
+      "author": "Maria Lopez",
+      "publication": "FinOps Weekly",
+      "date": "2024-04-05",
+      "reliability_score": 0.80,
+      "snippet": "When comparing managed PostgreSQL (AWS RDS, Google Cloud SQL) vs managed MongoDB (Atlas), PostgreSQL consistently shows 10-25% lower TCO at the 500GB-2TB range. The cost gap is primarily driven by MongoDB's higher per-GB storage pricing and premium support tiers. However, MongoDB's built-in sharding can reduce operational overhead costs for teams without dedicated DBAs."
+    },
+    {
+      "id": "EXT-05",
+      "title": "ACID Compliance in NoSQL: MongoDB Transactions Maturity Assessment",
+      "url": "https://data-engineering-today.com/mongodb-acid-assessment",
+      "author": "Dr. Robert Nguyen",
+      "publication": "Data Engineering Today",
+      "date": "2024-01-18",
+      "reliability_score": 0.90,
+      "snippet": "MongoDB's multi-document ACID transactions (introduced in v4.0, refined through v7.0) now cover most transactional use cases previously exclusive to relational databases. However, transaction performance degrades significantly when spanning multiple shards. For single-shard operations, MongoDB transactions add approximately 5-10% latency overhead compared to non-transactional writes."
+    },
+    {
+      "id": "EXT-06",
+      "title": "Data Sovereignty and Compliance in Multi-Tenant Architectures",
+      "url": "https://compliance-hub.org/data-sovereignty-multi-tenant",
+      "author": "Elena Kowalski",
+      "publication": "Compliance Engineering Hub",
+      "date": "2024-07-30",
+      "reliability_score": 0.93,
+      "snippet": "Both PostgreSQL and MongoDB support region-pinned deployments for data sovereignty compliance. PostgreSQL achieves this through logical replication with region-specific read replicas. MongoDB Atlas provides native zone-sharding for data residency. Organizations subject to GDPR or CCPA should ensure tenant data isolation is verifiable through audit logs, which both platforms support with enterprise-tier features."
+    }
+  ],
+  "search_config": {
+    "max_results": 5,
+    "match_threshold": 0.3,
+    "description": "Keyword matching against snippet and title fields; ranked by relevance and reliability score"
+  }
+}

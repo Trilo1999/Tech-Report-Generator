@@ -1,0 +1,32 @@
+# Virtual environment
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+
+# Qdrant local storage
+data/qdrant_storage/
+
+# Checkpoints
+data/checkpoints.db
+
+# Generated reports (keep directory, ignore outputs)
+reports/*.pdf
+reports/*.docx
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

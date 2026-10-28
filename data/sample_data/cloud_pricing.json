@@ -1,0 +1,66 @@
+{
+  "pricing_date": "2024-10-01",
+  "currency": "USD",
+  "region": "us-east-1",
+  "compute": {
+    "postgresql": {
+      "instance_type": "db.r6g.xlarge",
+      "vcpus": 4,
+      "memory_gb": 32,
+      "price_per_hour": 0.48,
+      "description": "AWS RDS PostgreSQL — memory-optimized instance"
+    },
+    "mongodb": {
+      "instance_type": "M40",
+      "vcpus": 4,
+      "memory_gb": 32,
+      "price_per_hour": 0.52,
+      "description": "MongoDB Atlas — dedicated cluster tier"
+    }
+  },
+  "storage": {
+    "postgresql": {
+      "type": "gp3 SSD",
+      "price_per_gb_month": 0.10,
+      "iops_included": 3000,
+      "additional_iops_price": 0.005,
+      "description": "AWS EBS gp3 storage for RDS"
+    },
+    "mongodb": {
+      "type": "NVMe SSD",
+      "price_per_gb_month": 0.25,
+      "iops_included": 5000,
+      "additional_iops_price": 0.008,
+      "description": "MongoDB Atlas provisioned storage with document overhead"
+    }
+  },
+  "backup": {
+    "postgresql": {
+      "price_per_gb_month": 0.021,
+      "retention_days": 7,
+      "description": "Automated daily snapshots"
+    },
+    "mongodb": {
+      "price_per_gb_month": 0.025,
+      "retention_days": 7,
+      "description": "Cloud backup with point-in-time restore"
+    }
+  },
+  "data_transfer": {
+    "intra_region_per_gb": 0.01,
+    "inter_region_per_gb": 0.09,
+    "internet_egress_per_gb": 0.09
+  },
+  "support": {
+    "postgresql": {
+      "plan": "Business",
+      "monthly_base": 100.00,
+      "description": "AWS Business Support for production workloads"
+    },
+    "mongodb": {
+      "plan": "Premium",
+      "monthly_base": 150.00,
+      "description": "MongoDB Atlas Premium Support"
+    }
+  }
+}
