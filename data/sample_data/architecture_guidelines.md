@@ -1,9 +1,9 @@
 # Internal Architecture Guidelines for Multi-Tenant SaaS Platforms
 
-**Document Classification**: Internal — Engineering Standards  
-**Version**: 2.1  
-**Last Updated**: 2024-09-15  
-**Approved By**: Platform Architecture Board  
+**Document Classification**: Internal — Engineering Standards
+**Version**: 2.1
+**Last Updated**: 2024-09-15
+**Approved By**: Platform Architecture Board
 
 ---
 
