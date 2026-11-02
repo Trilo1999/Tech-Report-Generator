@@ -16,6 +16,9 @@ build/
 # Qdrant local storage
 data/qdrant_storage/
 
+# FastEmbed cache
+data/cache/
+
 # Checkpoints
 data/checkpoints.db
 

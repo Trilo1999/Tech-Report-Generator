@@ -30,6 +30,7 @@ from src.config import (
     DATABASE_COMPARISON_PDF,
     EMBEDDING_DIMENSION,
     EMBEDDING_MODEL_NAME,
+    FASTEMBED_CACHE_DIR,
     QDRANT_COLLECTION_NAME,
     QDRANT_PREFER_EMBEDDED,
     QDRANT_STORAGE_DIR,
@@ -46,7 +47,8 @@ def get_embedding_model() -> TextEmbedding:
     global _EMBEDDING_MODEL
     if _EMBEDDING_MODEL is None:
         model_name = f"sentence-transformers/{EMBEDDING_MODEL_NAME}"
-        _EMBEDDING_MODEL = TextEmbedding(model_name=model_name)
+        cache_dir_str = str(FASTEMBED_CACHE_DIR) if FASTEMBED_CACHE_DIR.exists() else None
+        _EMBEDDING_MODEL = TextEmbedding(model_name=model_name, cache_dir=cache_dir_str)
     return _EMBEDDING_MODEL
 
 
