@@ -1,5 +1,7 @@
-"""LangGraph workflow definition — state, nodes, and graph wiring."""
+"""LangGraph workflow definition — state, nodes, edges, and graph builder."""
 
+from src.graph.builder import build_research_graph, create_research_graph
+from src.graph.edges import route_review, route_sufficiency
 from src.graph.nodes import (
     draft_report,
     evaluate_evidence,
@@ -25,4 +27,8 @@ __all__ = [
     "human_review",
     "revise_sections",
     "export_report",
+    "route_sufficiency",
+    "route_review",
+    "build_research_graph",
+    "create_research_graph",
 ]
