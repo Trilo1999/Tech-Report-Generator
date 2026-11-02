@@ -16,6 +16,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 SAMPLE_DATA_DIR = DATA_DIR / "sample_data"
 QDRANT_STORAGE_DIR = DATA_DIR / "qdrant_storage"
 CHECKPOINT_DB_PATH = DATA_DIR / "checkpoints.db"
+FASTEMBED_CACHE_DIR = DATA_DIR / "cache"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 
 # Sample data file paths
