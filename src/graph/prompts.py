@@ -55,7 +55,7 @@ Do NOT include markdown formatting or commentary outside the JSON object.
 """
 
 DRAFT_REPORT_PROMPT = """You are an Executive Technical Writer and Lead Enterprise Architect.
-Synthesize a comprehensive, rigorous technical evaluation report based exclusively on the provided evidence and calculations.
+Synthesize a comprehensive, rigorous, and layman-accessible technical evaluation report based exclusively on the provided evidence and calculations.
 
 Topic:
 {topic}
@@ -71,25 +71,29 @@ Deterministic Calculations & Analysis:
 
 Report Requirements:
 1. Every factual assertion, performance number, cost figure, and architectural claim MUST include an inline citation in square brackets matching the exact source_id (e.g., [QDR-01], [EXT-02], [CSV-01], [COST-01]).
-2. If any claim is made that cannot be substantiated by the provided evidence, you MUST explicitly flag it in the unsupported_claims list.
-3. The report must contain these standard sections in the sections dictionary:
-   - "Executive Summary": Strategic overview of recommendation and decision rationale.
-   - "Architecture & Data Model Comparison": Detailed analysis of schemas, isolation, and compliance.
-   - "Performance & Benchmark Analysis": Empirical throughput, p50/p95/p99 latency, concurrency scaling.
-   - "TCO & Cloud Cost Projection": Monthly and multi-year cost modeling breakdown.
-   - "Strategic Recommendations & Trade-offs": Decision matrix, operational risks, and final verdict.
+2. Explain citations in plain, layman-friendly English when citing them (e.g. "[COST-01: 12-Month Cloud TCO Model] indicates...", "[CSV-01: Empirical Latency Benchmark] demonstrates...", "[EXT-02: Framework Scaling Telemetry] shows...").
+3. If any claim is made that cannot be substantiated by the provided evidence, you MUST explicitly flag it in the unsupported_claims list.
+4. The report must contain these standard sections in the sections dictionary:
+   - "Executive Summary": Strategic high-level overview, key findings, and upfront decision summary.
+   - "Architecture & Data Model Comparison": Detailed analysis of schemas, isolation, type safety, and ecosystem libraries.
+   - "Performance & Benchmark Analysis": Empirical throughput, p50/p95/p99 latency, and concurrency scaling.
+   - "TCO & Cloud Cost Projection": Monthly and multi-year hosting, compute tiers, and maintenance overhead.
+   - "Final Verdict & Decision Matrix":
+     * Direct, unambiguous recommendation stating which option is best overall and why.
+     * Specific breakdown: Which is best for faster development and prototyping? Which is best for enterprise security?
+     * Plain-language summary and actionable next steps for non-technical stakeholders.
 
 Return your response strictly as a JSON object with this exact schema:
 {{
   "title": "Report Title",
   "sections": {{
-    "Executive Summary": "Markdown content with [source_id] citations...",
+    "Executive Summary": "Markdown content with [source_id: Description] citations...",
     "Architecture & Data Model Comparison": "Markdown content...",
     "Performance & Benchmark Analysis": "Markdown content...",
     "TCO & Cloud Cost Projection": "Markdown content...",
-    "Strategic Recommendations & Trade-offs": "Markdown content..."
+    "Final Verdict & Decision Matrix": "Markdown content with explicit winner and trade-offs..."
   }},
-  "cited_sources": ["QDR-01", "CSV-01", "COST-01"],
+  "cited_sources": ["QDR-01", "CSV-01", "COST-01", "EXT-01", "EXT-02"],
   "unsupported_claims": ["Any claim made that lacked explicit source backing"]
 }}
 Do NOT include markdown formatting or commentary outside the JSON object.
@@ -118,14 +122,15 @@ Calculations Summary:
 
 Revision Rules:
 1. ONLY modify the sections specified in target_sections.
-2. Address the reviewer's feedback thoroughly and precisely.
-3. Maintain rigorous inline citations [source_id] for all facts.
-4. If the feedback requests claims not supported by evidence, flag them in unsupported_claims.
+2. Address the reviewer's feedback thoroughly and decisively. If the reviewer asks "which is best", provide an unambiguous, clear verdict.
+3. Explain technical terms and citations ([COST-xx: Cloud TCO], [CSV-xx: Performance Telemetry], [EXT-xx: Industry Telemetry]) so a non-technical stakeholder can easily understand.
+4. If security or faster development is requested, provide direct comparative evaluation for both aspects and declare the winning choice for each.
+5. Maintain rigorous inline citations [source_id] for all facts. If the feedback requests claims not supported by evidence, flag them in unsupported_claims.
 
 Return your response strictly as a JSON object with this exact schema:
 {{
   "revised_sections": {{
-    "<Section Name>": "Updated markdown content with citations..."
+    "<Section Name>": "Updated markdown content with citations and clear verdict..."
   }},
   "unsupported_claims": ["Any unsupported claims introduced or flagged"],
   "cited_sources": ["List of all source_ids cited in revised sections"]

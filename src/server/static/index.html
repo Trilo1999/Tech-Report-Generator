@@ -3,127 +3,1031 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Research & Decision Report Agent</title>
+  <title>AI Technical Research & Decision Report Agent — Antigravity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #1A365D;
-      --secondary: #2B6CB0;
-      --accent: #C53030;
-      --success: #2F855A;
-      --bg: #F7FAFC;
-      --card-bg: #FFFFFF;
-      --text: #2D3748;
-      --text-muted: #718096;
-      --border: #E2E8F0;
+      --bg-dark: #090D16;
+      --bg-card: rgba(17, 24, 39, 0.75);
+      --bg-card-hover: rgba(24, 33, 53, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(56, 189, 248, 0.5);
+      --primary: #38BDF8;
+      --primary-glow: rgba(56, 189, 248, 0.25);
+      --accent-purple: #818CF8;
+      --accent-emerald: #10B981;
+      --accent-amber: #F59E0B;
+      --accent-rose: #F43F5E;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 24px; }
-    .container { max-width: 1100px; margin: 0 auto; }
-    header { background: var(--primary); color: white; padding: 20px 28px; border-radius: 8px; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    header h1 { font-size: 24px; font-weight: 700; }
-    header p { font-size: 14px; opacity: 0.9; margin-top: 4px; }
 
-    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .card h2 { font-size: 18px; margin-bottom: 12px; color: var(--primary); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .input-group { display: flex; gap: 12px; }
-    input[type="text"] { flex: 1; padding: 12px 16px; border: 1px solid var(--border); border-radius: 6px; font-size: 15px; }
-    button { padding: 12px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-    .btn-primary { background: var(--secondary); color: white; }
-    .btn-primary:hover { background: #2b5488; }
-    .btn-success { background: var(--success); color: white; }
-    .btn-success:hover { background: #276749; }
-    .btn-danger { background: var(--accent); color: white; }
-    .btn-danger:hover { background: #9b2c2c; }
+    body {
+      background-color: var(--bg-dark);
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(129, 140, 248, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.03) 0%, transparent 60%);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      line-height: 1.6;
+      padding: 32px 20px 80px;
+    }
 
-    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; background: #EDF2F7; color: var(--primary); }
-    .badge-pending { background: #FEFCBF; color: #975A16; }
-    .badge-approved { background: #C6F6D5; color: #22543D; }
-    .badge-rejected { background: #FED7D7; color: #742A2A; }
+    .container {
+      max-width: 1140px;
+      margin: 0 auto;
+    }
 
-    .citation-badge { display: inline-block; background: #EBF8FF; color: #2B6CB0; border: 1px solid #BEE3F8; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; margin: 0 2px; }
-    .unsupported-alert { background: #FFF5F5; border-left: 4px solid var(--accent); padding: 12px 16px; border-radius: 4px; margin-bottom: 16px; color: #742A2A; font-size: 14px; }
-    .section-block { margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
-    .section-block:last-child { border-bottom: none; }
-    .section-block h3 { font-size: 16px; color: var(--secondary); margin-bottom: 6px; }
-    .section-block p { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+    /* ─── Top Navbar ─── */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px;
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      margin-bottom: 32px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
 
-    .actions-grid { display: flex; gap: 12px; align-items: center; margin-top: 16px; }
-    textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; min-height: 70px; margin-top: 8px; }
-    .checkbox-list { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0; font-size: 13px; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .brand-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    .nav-status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .live-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.9); }
+    }
+
+    /* ─── Hero Header ─── */
+    .hero {
+      text-align: center;
+      margin-bottom: 36px;
+      position: relative;
+    }
+
+    .hero-tagline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      padding: 6px 14px;
+      border-radius: 30px;
+      margin-bottom: 14px;
+    }
+
+    .hero h1 {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      background: linear-gradient(135deg, #FFFFFF 30%, #94A3B8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+
+    .hero p {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* ─── Cards & Glassmorphism ─── */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .card-title svg {
+      color: var(--primary);
+    }
+
+    /* ─── Input & Quick Topic Pills ─── */
+    .input-wrapper {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .search-bar {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 4px 18px;
+      transition: all 0.2s ease;
+    }
+
+    .search-bar:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .search-bar svg {
+      color: var(--text-dim);
+      margin-right: 12px;
+    }
+
+    .search-bar input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-size: 15px;
+      font-family: var(--font-sans);
+      padding: 12px 0;
+    }
+
+    .search-bar input::placeholder {
+      color: var(--text-dim);
+    }
+
+    /* ─── Buttons ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284C7, #2563EB);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0369A1, #1D4ED8);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #059669, #10B981);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-success:hover {
+      background: linear-gradient(135deg, #047857, #059669);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+    }
+
+    .btn-amber {
+      background: linear-gradient(135deg, #D97706, #F59E0B);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-amber:hover {
+      background: linear-gradient(135deg, #B45309, #D97706);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #E11D48, #BE123C);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(225, 29, 72, 0.3);
+    }
+
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #BE123C, #9F1239);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* ─── Preset Topic Pills ─── */
+    .presets-container {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .presets-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 4px;
+    }
+
+    .preset-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preset-pill:hover {
+      background: rgba(56, 189, 248, 0.1);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    /* ─── Workflow Stage Stepper ─── */
+    .stepper {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .step-item {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .step-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-dim);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    .step-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .step-active {
+      border-color: var(--primary);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .step-active .step-num {
+      background: var(--primary);
+      color: #000;
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .step-active .step-label {
+      color: var(--primary);
+    }
+
+    .step-done {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.06);
+    }
+
+    .step-done .step-num {
+      background: var(--accent-emerald);
+      color: #FFF;
+    }
+
+    .step-done .step-label {
+      color: var(--text-main);
+    }
+
+    /* ─── Live Metrics Stat Bar ─── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-box {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .stat-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat-val {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #FFF;
+    }
+
+    .stat-lbl {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* ─── Citation Badges ─── */
+    .cite-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      margin: 0 2px;
+      vertical-align: baseline;
+      transition: transform 0.15s ease;
+    }
+
+    .cite-badge:hover {
+      transform: translateY(-1px);
+    }
+
+    .cite-qdr {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .cite-ext {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38BDF8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .cite-csv {
+      background: rgba(129, 140, 248, 0.12);
+      color: #A5B4FC;
+      border: 1px solid rgba(129, 140, 248, 0.3);
+    }
+
+    .cite-cost {
+      background: rgba(245, 158, 11, 0.12);
+      color: #FBBF24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* ─── Report Sections Rendering ─── */
+    .section-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+
+    .section-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .section-header {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-body {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #CBD5E1;
+      white-space: pre-wrap;
+    }
+
+    /* Highlighted Verdict Card */
+    .verdict-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(15, 23, 42, 0.8));
+      border: 1.5px solid rgba(16, 185, 129, 0.4);
+      border-radius: var(--radius-md);
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.1);
+    }
+
+    .verdict-header {
+      font-size: 17px;
+      font-weight: 800;
+      color: #34D399;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    /* Unsupported Claims Callout */
+    .claims-card {
+      background: rgba(244, 63, 94, 0.08);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      border-radius: var(--radius-md);
+      padding: 18px 22px;
+      margin-bottom: 20px;
+    }
+
+    .claims-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #FB7185;
+      margin-bottom: 10px;
+    }
+
+    .claims-list {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .claims-list li {
+      position: relative;
+      padding-left: 20px;
+      font-size: 13.5px;
+      color: #FDA4AF;
+      margin-bottom: 6px;
+      line-height: 1.5;
+    }
+
+    .claims-list li::before {
+      content: "⚠️";
+      position: absolute;
+      left: 0;
+      font-size: 11px;
+      top: 2px;
+    }
+
+    /* ─── Citation Legend Box ─── */
+    .legend-box {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      font-size: 12.5px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+    }
+
+    /* ─── HITL Review Station ─── */
+    .review-station {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9));
+      border: 1.5px solid rgba(56, 189, 248, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      margin-top: 28px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .review-station h3 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .review-station p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+
+    .section-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0 16px;
+    }
+
+    .chip-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .chip-label:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #FFF;
+    }
+
+    .chip-label input {
+      accent-color: var(--primary);
+    }
+
+    .chip-label.selected {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .feedback-textarea {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      padding: 14px;
+      min-height: 80px;
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.2s;
+      margin-bottom: 18px;
+    }
+
+    .feedback-textarea:focus {
+      border-color: var(--primary);
+    }
+
+    .review-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* ─── Spinner & Shimmer ─── */
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #FFF;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ─── Toast Notification ─── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--border-subtle);
+      color: #FFF;
+      padding: 12px 20px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    @media (max-width: 768px) {
+      .stepper { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .legend-box { grid-template-columns: 1fr; }
+      .input-wrapper { flex-direction: column; }
+      .hero h1 { font-size: 28px; }
+    }
   </style>
 </head>
 <body>
+
   <div class="container">
-    <header>
+
+    <!-- Top Navigation Bar -->
+    <nav>
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <span>Antigravity AI</span>
+        <span class="brand-badge">2.0 Engine</span>
+      </div>
+
+      <div class="nav-status">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <span class="live-dot"></span> Qdrant & Checkpoints Online
+        </span>
+        <span style="opacity: 0.5;">|</span>
+        <span id="navThread" style="font-family: var(--font-mono); font-size: 12px;">No active thread</span>
+      </div>
+    </nav>
+
+    <!-- Hero Header -->
+    <div class="hero">
+      <div class="hero-tagline">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Grounded Decision Intelligence
+      </div>
       <h1>AI Technical Research & Decision Report Agent</h1>
-      <p>Grounding in Qdrant Vector DB, Pandas Benchmarks, TCO Modeling & Human Review Checkpoints</p>
-    </header>
+      <p>Automated decomposition, Qdrant vector retrieval, empirical pandas benchmarks, deterministic cloud TCO modeling, and human review checkpointing.</p>
+    </div>
 
-    <!-- Query Input Card -->
+    <!-- Topic Input & Launch Console -->
     <div class="card">
-      <h2>Start Architecture Evaluation</h2>
-      <div class="input-group">
-        <input type="text" id="topicInput" value="PostgreSQL vs MongoDB Architecture Evaluation" placeholder="Enter evaluation topic..." />
-        <button class="btn-primary" id="startBtn" onclick="startResearch()">Launch Research</button>
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          Research Scope & Topic
+        </div>
+      </div>
+
+      <div class="input-wrapper">
+        <div class="search-bar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="topicInput" value="python vs java Architecture Evaluation on llm integration" placeholder="e.g. React vs Angular architecture, PostgreSQL vs MongoDB..." />
+        </div>
+        <button class="btn btn-primary" id="startBtn" onclick="startResearch()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Launch Research
+        </button>
+      </div>
+
+      <!-- Quick Preset Topics -->
+      <div class="presets-container">
+        <span class="presets-label">Preset Topics:</span>
+        <button class="preset-pill" onclick="setPreset('python vs java Architecture Evaluation on llm integration')">
+          🐍 Python vs ☕ Java (LLM Integration)
+        </button>
+        <button class="preset-pill" onclick="setPreset('PostgreSQL vs MongoDB Architecture Evaluation')">
+          🐘 Postgres vs 🍃 MongoDB
+        </button>
+        <button class="preset-pill" onclick="setPreset('React vs Angular Enterprise Performance Benchmark')">
+          ⚛️ React vs 🅰️ Angular
+        </button>
+        <button class="preset-pill" onclick="setPreset('AWS vs GCP Cloud TCO & Microservices')">
+          ☁️ AWS vs GCP TCO
+        </button>
       </div>
     </div>
 
-    <!-- Active Thread Status Card -->
-    <div class="card" id="statusCard" style="display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h2>Evaluation Session: <span id="threadIdDisplay" style="font-family: monospace; font-size: 14px;"></span></h2>
-        <span id="statusBadge" class="status-badge"></span>
+    <!-- Real-time Workflow Stepper -->
+    <div class="stepper" id="workflowStepper">
+      <div class="step-item" id="step-plan"><span class="step-num">1</span><span class="step-label">Planning</span></div>
+      <div class="step-item" id="step-gather"><span class="step-num">2</span><span class="step-label">Evidence</span></div>
+      <div class="step-item" id="step-bench"><span class="step-num">3</span><span class="step-label">TCO & Telemetry</span></div>
+      <div class="step-item" id="step-eval"><span class="step-num">4</span><span class="step-label">Sufficiency</span></div>
+      <div class="step-item" id="step-draft"><span class="step-num">5</span><span class="step-label">Draft Report</span></div>
+      <div class="step-item" id="step-review"><span class="step-num">6</span><span class="step-label">HITL Review</span></div>
+    </div>
+
+    <!-- Live Metrics Grid -->
+    <div class="stats-grid" id="statsGrid" style="display: none;">
+      <div class="stat-box">
+        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: var(--primary);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        </div>
+        <div>
+          <div class="stat-val" id="statEvidence">0</div>
+          <div class="stat-lbl">Evidence Collected</div>
+        </div>
       </div>
-      <p id="statusMsg" style="font-size: 14px; color: var(--text-muted);"></p>
+
+      <div class="stat-box">
+        <div class="stat-icon" style="background: rgba(129, 140, 248, 0.12); color: var(--accent-purple);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        </div>
+        <div>
+          <div class="stat-val" id="statSubquestions">0</div>
+          <div class="stat-lbl">Subquestions Formulated</div>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon" style="background: rgba(244, 63, 94, 0.12); color: var(--accent-rose);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        </div>
+        <div>
+          <div class="stat-val" id="statGaps">0</div>
+          <div class="stat-lbl">Limitations Audited</div>
+        </div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); color: var(--accent-emerald);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        </div>
+        <div>
+          <div class="stat-val" id="statStatus">IDLE</div>
+          <div class="stat-lbl">Workflow Status</div>
+        </div>
+      </div>
     </div>
 
-    <!-- Unsupported Claims Alert -->
-    <div class="unsupported-alert" id="unsupportedCard" style="display: none;">
-      <strong>Identified Limitations & Unsupported Claims:</strong>
-      <ul id="unsupportedList" style="margin-left: 20px; margin-top: 4px;"></ul>
+    <!-- Evidence Citation Guide Legend -->
+    <div class="legend-box" id="legendBox" style="display: none;">
+      <div class="legend-item">
+        <span class="cite-badge cite-qdr">[QDR-xx]</span>
+        <span><b>Internal Standards:</b> Architectural guidelines from Qdrant vector storage.</span>
+      </div>
+      <div class="legend-item">
+        <span class="cite-badge cite-ext">[EXT-xx]</span>
+        <span><b>External Research:</b> Peer-reviewed industry whitepapers and technical studies.</span>
+      </div>
+      <div class="legend-item">
+        <span class="cite-badge cite-csv">[CSV-xx]</span>
+        <span><b>Empirical Telemetry:</b> Stress-test benchmarks (latency percentiles & ops/sec).</span>
+      </div>
+      <div class="legend-item">
+        <span class="cite-badge cite-cost">[COST-xx]</span>
+        <span><b>Cloud TCO Models:</b> 12-to-36 month infrastructure and maintenance modeling.</span>
+      </div>
     </div>
 
-    <!-- Report Preview Card -->
+    <!-- Unsupported Claims & Audit Limitations -->
+    <div class="claims-card" id="unsupportedCard" style="display: none;">
+      <div class="claims-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        Audited Limitations & Unsupported Claims (Evidence Integrity Guardrail)
+      </div>
+      <ul class="claims-list" id="unsupportedList"></ul>
+    </div>
+
+    <!-- Report Preview Area -->
     <div class="card" id="reportCard" style="display: none;">
-      <h2 id="reportTitle">Report Preview</h2>
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <span id="reportTitle">Synthesis & Evaluation Report</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" onclick="copyReport()" style="padding: 8px 14px; font-size: 13px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copy Text
+          </button>
+          <a id="downloadBtnTop" class="btn btn-success" style="display: none; padding: 8px 16px; font-size: 13px;" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Download PDF
+          </a>
+        </div>
+      </div>
+
       <div id="sectionsContainer"></div>
     </div>
 
-    <!-- Reviewer Action Station -->
-    <div class="card" id="reviewCard" style="display: none;">
-      <h2>Human-in-the-Loop Review Station</h2>
-      <p style="font-size: 14px; color: var(--text-muted);">The workflow has reached the checkpoint boundary. Select an action below:</p>
+    <!-- Human-in-the-Loop Review Station -->
+    <div class="review-station" id="reviewCard" style="display: none;">
+      <h3>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="12 8 8 12 12 16 12 8"></polygon></svg>
+        Human-in-the-Loop Review Station
+      </h3>
+      <p>The workflow is suspended at the checkpoint boundary. Review the evidence-grounded draft above and choose an action:</p>
 
-      <div style="margin-top: 14px;">
-        <label style="font-size: 13px; font-weight: 600;">Optional Revision Instructions:</label>
-        <textarea id="feedbackNotes" placeholder="e.g. Include 36-month reserved instance pricing in the TCO section..."></textarea>
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 13px; font-weight: 700; color: #FFF; display: block; margin-bottom: 6px;">
+          Revision Instructions & Reviewer Notes:
+        </label>
+        <textarea id="feedbackNotes" class="feedback-textarea" placeholder="e.g. Include enterprise security considerations and declare an explicit winner for my project..."></textarea>
       </div>
 
-      <div style="margin-top: 10px;">
-        <label style="font-size: 13px; font-weight: 600;">Target Sections for Revision:</label>
-        <div class="checkbox-list" id="targetSectionsCheckboxes"></div>
+      <div style="margin-bottom: 18px;">
+        <label style="font-size: 13px; font-weight: 700; color: #FFF; display: block; margin-bottom: 6px;">
+          Target Specific Sections for Surgical Revision (Optional):
+        </label>
+        <div class="section-chips" id="targetSectionsCheckboxes"></div>
       </div>
 
-      <div class="actions-grid">
-        <button class="btn-success" onclick="submitDecision('approved')">Approve & Export PDF</button>
-        <button class="btn-primary" onclick="submitDecision('revise')">Request Revision</button>
-        <button class="btn-danger" onclick="submitDecision('rejected')">Reject Proposal</button>
-        <a id="downloadBtn" style="display: none;" class="btn-primary" style="text-decoration: none; padding: 12px 20px;" download>Download PDF</a>
+      <div class="review-actions">
+        <button class="btn btn-success" id="btnApprove" onclick="submitDecision('approved')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Approve & Publish PDF
+        </button>
+        <button class="btn btn-amber" id="btnRevise" onclick="submitDecision('revise')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          Request Surgical Revision
+        </button>
+        <button class="btn btn-danger" id="btnReject" onclick="submitDecision('rejected')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          Reject Proposal
+        </button>
+        <a id="downloadBtnBottom" class="btn btn-primary" style="display: none;" download>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Download PDF Report
+        </a>
       </div>
     </div>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span id="toastMsg">Action completed successfully</span>
   </div>
 
   <script>
     let currentThreadId = null;
+    let currentReportContent = "";
+
+    function setPreset(topic) {
+      document.getElementById("topicInput").value = topic;
+      startResearch();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      document.getElementById("toastMsg").innerText = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 3500);
+    }
+
+    function setStepStatus(stepId, status) {
+      const el = document.getElementById(stepId);
+      if (!el) return;
+      el.className = "step-item " + (status === "active" ? "step-active" : status === "done" ? "step-done" : "");
+    }
 
     async function startResearch() {
-      const topic = document.getElementById("topicInput").value;
+      const topic = document.getElementById("topicInput").value.trim();
       if (!topic) return;
 
       const btn = document.getElementById("startBtn");
-      btn.innerText = "Analyzing...";
+      btn.innerHTML = `<div class="spinner"></div> Researching...`;
       btn.disabled = true;
+
+      // Reset Stepper
+      ["step-plan", "step-gather", "step-bench", "step-eval", "step-draft", "step-review"].forEach(id => {
+        setStepStatus(id, "");
+      });
+      setStepStatus("step-plan", "active");
 
       try {
         const res = await fetch("/api/research/start", {
@@ -134,23 +1038,32 @@
         const data = await res.json();
         currentThreadId = data.thread_id;
         renderState(data);
+        showToast("Research workflow initiated successfully!");
       } catch (err) {
         alert("Failed to start research: " + err);
       } finally {
-        btn.innerText = "Launch Research";
+        btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Launch Research`;
         btn.disabled = false;
       }
     }
 
     function renderState(data) {
-      document.getElementById("statusCard").style.display = "block";
-      document.getElementById("threadIdDisplay").innerText = data.thread_id;
+      document.getElementById("navThread").innerText = data.thread_id || "Active session";
+      document.getElementById("statsGrid").style.display = "grid";
+      document.getElementById("legendBox").style.display = "grid";
 
-      const badge = document.getElementById("statusBadge");
-      badge.innerText = data.status;
-      badge.className = "status-badge " + (data.status === "completed" ? "badge-approved" : data.status === "rejected" ? "badge-rejected" : "badge-pending");
+      document.getElementById("statEvidence").innerText = data.evidence_count || 0;
+      document.getElementById("statSubquestions").innerText = (data.subquestions || []).length;
+      document.getElementById("statGaps").innerText = (data.unsupported_claims || []).length;
+      document.getElementById("statStatus").innerText = (data.status || "RUNNING").toUpperCase();
 
-      document.getElementById("statusMsg").innerText = `Evidence Items Collected: ${data.evidence_count || 0}. Ready for evaluation.`;
+      // Update stepper stages
+      setStepStatus("step-plan", "done");
+      setStepStatus("step-gather", "done");
+      setStepStatus("step-bench", "done");
+      setStepStatus("step-eval", "done");
+      setStepStatus("step-draft", data.draft_report ? "done" : "active");
+      setStepStatus("step-review", data.is_pending_review ? "step-active" : data.status === "completed" ? "step-done" : "");
 
       // Render Unsupported Claims
       const claims = data.unsupported_claims || [];
@@ -171,50 +1084,116 @@
 
         const container = document.getElementById("sectionsContainer");
         const sections = draft.sections || {};
+        currentReportContent = `${draft.title}\n\n` + Object.entries(sections).map(([k, v]) => `## ${k}\n${v}`).join("\n\n");
+
         container.innerHTML = Object.entries(sections).map(([sec, text]) => {
-          const highlighted = text.replace(/\[(QDR-\d+|EXT-\d+|CSV-\d+|COST-\d+)\]/g, '<span class="citation-badge">[$1]</span>');
-          return `<div class="section-block"><h3>${sec}</h3><p>${highlighted}</p></div>`;
+          const isVerdict = /verdict|recommendation|decision matrix|strategic/i.test(sec);
+
+          // Replace citations with color-coded badges
+          let highlighted = text
+            .replace(/\[(QDR-[\w\.\-]+)(?::\s*([^\]]+))?\]/g, (m, id, desc) =>
+              `<span class="cite-badge cite-qdr">[${id}${desc ? ': ' + desc : ''}]</span>`
+            )
+            .replace(/\[(EXT-[\w\.\-]+)(?::\s*([^\]]+))?\]/g, (m, id, desc) =>
+              `<span class="cite-badge cite-ext">[${id}${desc ? ': ' + desc : ''}]</span>`
+            )
+            .replace(/\[(CSV-[\w\.\-]+)(?::\s*([^\]]+))?\]/g, (m, id, desc) =>
+              `<span class="cite-badge cite-csv">[${id}${desc ? ': ' + desc : ''}]</span>`
+            )
+            .replace(/\[(COST-[\w\.\-]+)(?::\s*([^\]]+))?\]/g, (m, id, desc) =>
+              `<span class="cite-badge cite-cost">[${id}${desc ? ': ' + desc : ''}]</span>`
+            );
+
+          if (isVerdict) {
+            return `
+              <div class="verdict-card">
+                <div class="verdict-header">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                  ${sec}
+                </div>
+                <div class="section-body">${highlighted}</div>
+              </div>
+            `;
+          }
+
+          return `
+            <div class="section-card">
+              <div class="section-header">${sec}</div>
+              <div class="section-body">${highlighted}</div>
+            </div>
+          `;
         }).join("");
 
         // Populate revision checkboxes
         const chkContainer = document.getElementById("targetSectionsCheckboxes");
         chkContainer.innerHTML = Object.keys(sections).map(sec =>
-          `<label><input type="checkbox" name="targetSec" value="${sec}"> ${sec}</label>`
+          `<label class="chip-label">
+            <input type="checkbox" name="targetSec" value="${sec}">
+            ${sec}
+          </label>`
         ).join("");
       }
 
-      // Render Review Panel
+      // Review Station Display
       const reviewCard = document.getElementById("reviewCard");
-      const downloadBtn = document.getElementById("downloadBtn");
+      const downloadBtnTop = document.getElementById("downloadBtnTop");
+      const downloadBtnBottom = document.getElementById("downloadBtnBottom");
+
       if (data.is_pending_review) {
         reviewCard.style.display = "block";
-        downloadBtn.style.display = "none";
+        downloadBtnTop.style.display = "none";
+        downloadBtnBottom.style.display = "none";
       } else if (data.status === "completed") {
         reviewCard.style.display = "block";
-        downloadBtn.style.display = "inline-block";
-        downloadBtn.href = `/api/research/download/${data.thread_id}`;
-        downloadBtn.innerText = "Download Exported PDF";
+        const downloadUrl = `/api/research/download/${data.thread_id}`;
+        downloadBtnTop.style.display = "inline-flex";
+        downloadBtnTop.href = downloadUrl;
+        downloadBtnBottom.style.display = "inline-flex";
+        downloadBtnBottom.href = downloadUrl;
       }
     }
 
     async function submitDecision(decision) {
       if (!currentThreadId) return;
 
-      const feedbackNotes = document.getElementById("feedbackNotes").value;
+      const feedbackNotes = document.getElementById("feedbackNotes").value.trim();
       const checkedBoxes = Array.from(document.querySelectorAll("input[name='targetSec']:checked"));
       const targetSections = checkedBoxes.map(cb => cb.value);
 
-      const res = await fetch(`/api/research/review/${currentThreadId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          decision,
-          feedback_notes: feedbackNotes,
-          target_sections: targetSections
-        })
+      const targetBtn = decision === "approved" ? document.getElementById("btnApprove")
+                      : decision === "revise" ? document.getElementById("btnRevise")
+                      : document.getElementById("btnReject");
+
+      const origText = targetBtn.innerHTML;
+      targetBtn.innerHTML = `<div class="spinner"></div> Processing...`;
+      targetBtn.disabled = true;
+
+      try {
+        const res = await fetch(`/api/research/review/${currentThreadId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            decision,
+            feedback_notes: feedbackNotes,
+            target_sections: targetSections
+          })
+        });
+        const data = await res.json();
+        renderState(data);
+        showToast(decision === "approved" ? "Report approved and published!" : decision === "revise" ? "Revision completed!" : "Proposal rejected.");
+      } catch (err) {
+        alert("Review submission failed: " + err);
+      } finally {
+        targetBtn.innerHTML = origText;
+        targetBtn.disabled = false;
+      }
+    }
+
+    function copyReport() {
+      if (!currentReportContent) return;
+      navigator.clipboard.writeText(currentReportContent).then(() => {
+        showToast("Report markdown copied to clipboard!");
       });
-      const data = await res.json();
-      renderState(data);
     }
   </script>
 </body>

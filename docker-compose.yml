@@ -53,21 +53,39 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       - QDRANT_URL=http://qdrant:6333
       - POSTGRES_URL=postgresql://postgres:postgrespassword@postgres:5432/research_agent
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - LLM_MODEL_NAME=${LLM_MODEL_NAME:-gpt-4o-mini}
     volumes:
       - ./data:/app/data
       - ./reports:/app/reports
+      - ./src:/app/src
+
+
     depends_on:
       qdrant:
         condition: service_healthy
       postgres:
         condition: service_healthy
 
+  # ────────────────────────────────────────────────────────────
+  # React + TypeScript Frontend (Served via Nginx on port 3000)
+  # ────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: research_agent_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - agent
+
 volumes:
+
   qdrant_data:
     name: research_agent_qdrant_data
   postgres_data:

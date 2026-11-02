@@ -2,7 +2,12 @@
 
 import argparse
 from pathlib import Path
+import sys
 import uuid
+
+# Ensure unbuffered realtime output
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(line_buffering=True)
 
 from src.graph.builder import create_research_graph
 from src.graph.checkpoints import get_checkpointer, get_thread_state, resume_workflow
