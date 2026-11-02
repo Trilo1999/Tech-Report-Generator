@@ -53,14 +53,17 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       - QDRANT_URL=http://qdrant:6333
       - POSTGRES_URL=postgresql://postgres:postgrespassword@postgres:5432/research_agent
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - LLM_MODEL_NAME=${LLM_MODEL_NAME:-gpt-4o-mini}
     volumes:
       - ./data:/app/data
       - ./reports:/app/reports
+      - ./src:/app/src
+
+
     depends_on:
       qdrant:
         condition: service_healthy

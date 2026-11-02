@@ -7,6 +7,11 @@ Supports both containerized services (Docker Qdrant & PostgreSQL) and local embe
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+# Load .env file automatically
+load_dotenv()
+
 # ──────────────────────────────────────────────
 # Paths
 # ──────────────────────────────────────────────
@@ -49,11 +54,33 @@ POSTGRES_URL = os.getenv("POSTGRES_URL", "postgresql://postgres:postgrespassword
 SQLITE_DB_URL = f"sqlite:///{CHECKPOINT_DB_PATH}"
 
 # ──────────────────────────────────────────────
-# LLM & Observability
+# LLM & Observability (Hive AI, Google Gemini, OpenAI)
 # ──────────────────────────────────────────────
-LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "gpt-4o-mini")
-LLM_TEMPERATURE = 0.2  # Low temperature for factual, deterministic outputs
+HIVE_SECRET_KEY = os.getenv("HIVE_SECRET_KEY", os.getenv("HIVE_API_KEY", ""))
+HIVE_REGIONAL_COMPLIANCE = os.getenv("HIVE_REGIONAL_COMPLIANCE", "false").lower() == "true"
+HIVE_BASE_URL = os.getenv(
+    "HIVE_BASE_URL",
+    "https://api-va1.deploy.com/api/v1" if HIVE_REGIONAL_COMPLIANCE else "https://api-cdn.deploy.com/api/v1",
+)
+HIVE_MODEL_NAME = os.getenv("HIVE_MODEL_NAME", "deepseek-ai/deepseek-v4.1-flash-1017")
+
+
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+
+if HIVE_SECRET_KEY:
+    _default_provider = "hive"
+    _default_model = HIVE_MODEL_NAME
+elif GOOGLE_API_KEY:
+    _default_provider = "google"
+    _default_model = "gemini-3-flash-preview"
+else:
+    _default_provider = "openai"
+    _default_model = "gpt-4o-mini"
+
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", _default_provider).lower()
+LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", _default_model)
+LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.2"))
 
 # ──────────────────────────────────────────────
 # Agent Workflow Constants
