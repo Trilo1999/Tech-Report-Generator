@@ -70,7 +70,22 @@ services:
       postgres:
         condition: service_healthy
 
+  # ────────────────────────────────────────────────────────────
+  # React + TypeScript Frontend (Served via Nginx on port 3000)
+  # ────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: research_agent_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - agent
+
 volumes:
+
   qdrant_data:
     name: research_agent_qdrant_data
   postgres_data:

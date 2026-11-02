@@ -20,9 +20,16 @@ data/qdrant_storage/
 data/cache/
 
 # Checkpoints
-data/checkpoints.db
+data/checkpoints.db*
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+.npm/
 
 # Generated reports (keep directory, ignore outputs)
+
 reports/*.pdf
 reports/*.docx
 
