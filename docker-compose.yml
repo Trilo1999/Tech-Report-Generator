@@ -62,6 +62,9 @@ services:
       - ./data:/app/data
       - ./reports:/app/reports
       - ./src:/app/src
+      - ./config:/app/config
+      - ./routes:/app/routes
+      - ./services:/app/services
 
 
     depends_on:

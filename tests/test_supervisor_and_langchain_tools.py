@@ -413,3 +413,128 @@ def test_rag_pipeline_external_search_and_analytics():
     breakdown = analytics_result["calculations"]["cost_projection"]["breakdown"]
     assert "naive_rag" in breakdown
     assert "advanced_rag" in breakdown
+
+
+def test_llm_autonomous_tool_calling_decision():
+    """Verify that sub-agents execute LLM-decided tool calls when emitted, and log autonomous decision."""
+    from unittest.mock import MagicMock
+    from langchain_core.messages import AIMessage
+
+    mock_llm = MagicMock()
+    mock_llm.bind_tools.return_value.invoke.return_value = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": "search_internal_documents",
+                "args": {"query": "PostgreSQL ACID compliance", "limit": 2},
+                "id": "call-test-123",
+                "type": "tool_call",
+            }
+        ],
+    )
+
+    with (
+        patch("src.graph.subagents.get_llm", return_value=mock_llm),
+        patch.dict("os.environ", {"MOCK_LLM": "false"}),
+    ):
+        state: ResearchState = {
+            "topic": "PostgreSQL Architecture",
+            "subquestions": ["How does PostgreSQL handle ACID?"],
+            "evidence": [],
+            "calculations": {},
+            "iteration_count": 0,
+            "is_sufficient": False,
+            "missing_gaps": [],
+            "draft_report": None,
+            "unsupported_claims": [],
+            "status": "planning",
+        }
+        res = internal_research_agent(state)
+        history = res.get("subagent_history", [])
+        assert len(history) > 0
+        assert history[0]["llm_autonomous_decision"] is True
+        assert len(history[0]["tool_calls_executed"]) == 1
+        assert history[0]["tool_calls_executed"][0]["tool"] == "search_internal_documents"
+        assert len(res["evidence"]) > 0
+
+
+# ──────────────────────────────────────────────
+# 5. Orchestrator-Worker Pattern Verification
+# ──────────────────────────────────────────────
+def test_orchestrator_planner_and_task_dispatch():
+    """Verify orchestrator decomposes research into worker tasks and dispatches via Send."""
+    from langgraph.types import Send
+    from src.graph.orchestrator import assign_worker_tasks, orchestrator_planner
+
+    state: ResearchState = {
+        "topic": "PostgreSQL vs MongoDB Architecture Evaluation",
+        "subquestions": ["How do schemas compare?", "What are latency numbers?", "What is TCO?"],
+        "evidence": [],
+        "calculations": {},
+        "iteration_count": 0,
+        "is_sufficient": False,
+        "missing_gaps": [],
+        "draft_report": None,
+        "unsupported_claims": [],
+        "status": "planning",
+    }
+    plan_res = orchestrator_planner(state)
+    assert plan_res["status"] == "orchestrating"
+    assert "worker_tasks" in plan_res
+    tasks = plan_res["worker_tasks"]
+    assert len(tasks) >= 3
+
+    # Verify dynamic fan-out sends
+    state_with_plan = {**state, **plan_res}
+    sends = assign_worker_tasks(state_with_plan)
+    assert len(sends) == len(tasks)
+    for s in sends:
+        assert isinstance(s, Send)
+        assert s.node in {"internal_research_worker", "external_research_worker", "analytics_worker"}
+
+
+def test_orchestrator_worker_graph_compilation_and_execution():
+    """Verify full end-to-end execution of the Orchestrator-Worker pattern with Map-Reduce."""
+    from src.graph.builder import build_orchestrator_worker_graph, create_orchestrator_worker_graph
+
+    workflow = build_orchestrator_worker_graph()
+    expected = {
+        "plan_research",
+        "orchestrator_planner",
+        "internal_research_worker",
+        "external_research_worker",
+        "analytics_worker",
+        "orchestrator_synthesizer",
+        "human_review",
+        "revise_sections",
+        "export_report",
+    }
+    assert expected.issubset(set(workflow.nodes.keys()))
+
+    compiled = create_orchestrator_worker_graph()
+    assert compiled is not None
+
+    mock_review_feedback = {
+        "decision": "approved",
+        "feedback_notes": "Orchestrator parallel workers gathered all dimensions accurately.",
+        "target_sections": [],
+    }
+
+    initial_input = {
+        "topic": "PostgreSQL vs MongoDB Enterprise Architecture & TCO",
+    }
+
+    with patch("src.graph.nodes.interrupt", return_value=mock_review_feedback):
+        final_state = compiled.invoke(initial_input)
+
+        assert final_state is not None
+        assert final_state["status"] == "completed"
+        assert len(final_state["evidence"]) >= 3
+        assert final_state["draft_report"] is not None
+        assert final_state["final_report_path"] is not None
+        assert final_state["final_report_path"].endswith(".pdf")
+        # Ensure subagent history captured both planner and workers
+        history = final_state.get("subagent_history", [])
+        agent_names = {h.get("agent") for h in history if isinstance(h, dict)}
+        assert "orchestrator_planner" in agent_names
+        assert "orchestrator_synthesizer" in agent_names

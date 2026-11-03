@@ -19,7 +19,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --default-timeout=100 -r requirements.txt
 
 # Copy source code and application assets
+COPY config/ ./config/
+COPY routes/ ./routes/
+COPY services/ ./services/
 COPY src/ ./src/
+COPY app.py .
 COPY data/sample_data/ ./data/sample_data/
 COPY scripts/ ./scripts/
 COPY tests/ ./tests/

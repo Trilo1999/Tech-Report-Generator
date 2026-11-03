@@ -16,6 +16,14 @@ from src.graph.nodes import (
     plan_research,
     revise_sections,
 )
+from src.graph.orchestrator import (
+    analytics_worker,
+    assign_worker_tasks,
+    external_research_worker,
+    internal_research_worker,
+    orchestrator_planner,
+    orchestrator_synthesizer,
+)
 from src.graph.subagents import (
     analytics_agent,
     drafting_agent,
@@ -168,4 +176,76 @@ def create_multi_agent_graph(checkpointer: Optional[Any] = None) -> CompiledStat
     Build and compile the multi-agent supervisor research workflow graph.
     """
     workflow = build_multi_agent_graph()
+    return workflow.compile(checkpointer=checkpointer)
+
+
+def build_orchestrator_worker_graph() -> StateGraph:
+    """
+    Construct the Orchestrator-Worker StateGraph implementing dynamic fan-out
+    dispatch (Map-Reduce) using LangGraph's Send API.
+
+    1. orchestrator_planner: dynamically generates WorkerTasks.
+    2. assign_worker_tasks: fans out parallel Send dispatches to workers:
+       - internal_research_worker (search_internal_documents_tool)
+       - external_research_worker (search_external_sources_tool)
+       - analytics_worker (analyze_csv_tool, calculate_cost_tool)
+    3. orchestrator_synthesizer: reduces and aggregates all worker outputs into a cited draft report.
+    4. human_review: Human-in-the-Loop review interrupt.
+    5. export_report: exports publication-ready report.
+    """
+    workflow = StateGraph(ResearchState)
+
+    # 1. Register Orchestrator, Workers, and Review Nodes
+    workflow.add_node("plan_research", plan_research)
+    workflow.add_node("orchestrator_planner", orchestrator_planner)
+    workflow.add_node("internal_research_worker", internal_research_worker)
+    workflow.add_node("external_research_worker", external_research_worker)
+    workflow.add_node("analytics_worker", analytics_worker)
+    workflow.add_node("orchestrator_synthesizer", orchestrator_synthesizer)
+    workflow.add_node("human_review", human_review)
+    workflow.add_node("revise_sections", revise_sections)
+    workflow.add_node("export_report", export_report)
+
+    # 2. Sequential entry
+    workflow.add_edge(START, "plan_research")
+    workflow.add_edge("plan_research", "orchestrator_planner")
+
+    # 3. Dynamic Fan-out via Send API
+    workflow.add_conditional_edges(
+        "orchestrator_planner",
+        assign_worker_tasks,
+        ["internal_research_worker", "external_research_worker", "analytics_worker"],
+    )
+
+    # 4. Workers Fan-in to Synthesizer (Map-Reduce)
+    workflow.add_edge("internal_research_worker", "orchestrator_synthesizer")
+    workflow.add_edge("external_research_worker", "orchestrator_synthesizer")
+    workflow.add_edge("analytics_worker", "orchestrator_synthesizer")
+
+    # 5. Synthesizer to Human Review
+    workflow.add_edge("orchestrator_synthesizer", "human_review")
+
+    # 6. Human Review routing
+    workflow.add_conditional_edges(
+        "human_review",
+        route_review,
+        {
+            "export_report": "export_report",
+            "revise_sections": "revise_sections",
+            END: END,
+        },
+    )
+
+    # 7. Revision and Export loops
+    workflow.add_edge("revise_sections", "human_review")
+    workflow.add_edge("export_report", END)
+
+    return workflow
+
+
+def create_orchestrator_worker_graph(checkpointer: Optional[Any] = None) -> CompiledStateGraph:
+    """
+    Build and compile the orchestrator-worker graph with optional persistence checkpointer.
+    """
+    workflow = build_orchestrator_worker_graph()
     return workflow.compile(checkpointer=checkpointer)
