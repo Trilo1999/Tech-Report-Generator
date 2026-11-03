@@ -32,13 +32,50 @@ class BaseAgent:
             tools: Tools available to the agent.
             system_prompt: System prompt string.
         """
-        self.llm = llm or get_default_chat_client()
+        self._llm = llm
         self.tools = tools or []
         self.system_prompt = system_prompt
-        self.prompt = self.get_prompt()
-        self.agent = self.get_agent()
-        self.agent_executor = self.get_agent_executor()
-        self.agent_with_memory = self.get_agent_with_memory()
+        self._prompt = None
+        self._agent = None
+        self._agent_executor = None
+        self._agent_with_memory = None
+
+    @property
+    def llm(self):
+        if self._llm is None:
+            self._llm = get_default_chat_client()
+        return self._llm
+
+    @llm.setter
+    def llm(self, value):
+        self._llm = value
+        self._agent = None
+        self._agent_executor = None
+        self._agent_with_memory = None
+
+    @property
+    def prompt(self):
+        if self._prompt is None:
+            self._prompt = self.get_prompt()
+        return self._prompt
+
+    @property
+    def agent(self):
+        if self._agent is None:
+            self._agent = self.get_agent()
+        return self._agent
+
+    @property
+    def agent_executor(self):
+        if self._agent_executor is None:
+            self._agent_executor = self.get_agent_executor()
+        return self._agent_executor
+
+    @property
+    def agent_with_memory(self):
+        if self._agent_with_memory is None:
+            self._agent_with_memory = self.get_agent_with_memory()
+        return self._agent_with_memory
 
     def get_prompt(self):
         """Build the agent prompt template.

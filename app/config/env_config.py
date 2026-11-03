@@ -61,7 +61,7 @@ class Settings:
         self.HIVE_BASE_URL: str = os.getenv(
             "HIVE_BASE_URL",
             (
-                "https://api-va1.deploy.com/api/v1"
+                "https://api-regional.deploy.com/api/v1"
                 if self.HIVE_REGIONAL_COMPLIANCE
                 else "https://api-cdn.deploy.com/api/v1"
             ),
