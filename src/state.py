@@ -2,7 +2,7 @@
 
 import operator
 from typing import Annotated, Any, Dict, List, Literal, Optional
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 
 class EvidenceItem(TypedDict):
@@ -59,4 +59,9 @@ class ResearchState(TypedDict):
         "approved",
         "rejected",
         "completed",
+        "supervising",
     ]
+    # Supervisor multi-agent orchestration & monitoring fields
+    next_agent: NotRequired[Optional[str]]
+    supervisor_notes: NotRequired[Optional[str]]
+    subagent_history: NotRequired[Annotated[List[Dict[str, Any]], operator.add]]

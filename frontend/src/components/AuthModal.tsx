@@ -183,7 +183,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="alex@antigravity.ai"
+              placeholder="alex@example.com"
               disabled={isSubmitting}
             />
           </div>

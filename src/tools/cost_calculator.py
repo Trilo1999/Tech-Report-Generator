@@ -10,6 +10,9 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from langchain_core.tools import tool
+from pydantic import BaseModel, Field
+
 from src.config import CLOUD_PRICING_JSON
 
 # Standard monthly operational hours (365.25 / 12 * 24 ≈ 730)
@@ -140,3 +143,53 @@ def calculate_cost(
         "comparison": comparison,
         "reliability_score": 1.0,
     }
+
+
+class CostCalculatorInput(BaseModel):
+    """Input schema for deterministic cloud infrastructure cost calculator."""
+
+    databases: List[str] = Field(
+        default=["postgresql", "mongodb"],
+        description="List of database/cloud platform keys to compare (e.g., ['postgresql', 'mongodb'], ['aws', 'azure'], ['aws', 'gcp']).",
+    )
+    storage_gb: float = Field(
+        default=500.0,
+        description="Provisioned storage capacity in gigabytes per month.",
+    )
+    compute_instances: int = Field(
+        default=3,
+        description="Number of compute instances in HA topology (e.g. 1 primary + 2 replicas).",
+    )
+    projection_months: int = Field(
+        default=12,
+        description="Projection duration in months (e.g. 12 or 36).",
+    )
+    include_support: bool = Field(
+        default=True,
+        description="Whether to include enterprise cloud support plan tier.",
+    )
+    region: str = Field(
+        default="us-east-1",
+        description="Cloud region identifier (e.g., 'us-east-1').",
+    )
+
+
+@tool("calculate_cost", args_schema=CostCalculatorInput)
+def calculate_cost_tool(
+    databases: Optional[List[str]] = None,
+    storage_gb: float = 500.0,
+    compute_instances: int = 3,
+    projection_months: int = 12,
+    include_support: bool = True,
+    region: str = "us-east-1",
+) -> Dict[str, Any]:
+    """Compute deterministic Total Cost of Ownership (TCO) for databases and cloud infrastructure platforms without financial hallucinations."""
+    cfg = {
+        "databases": databases or ["postgresql", "mongodb"],
+        "storage_gb": storage_gb,
+        "compute_instances": compute_instances,
+        "projection_months": projection_months,
+        "include_support": include_support,
+        "region": region,
+    }
+    return calculate_cost(config=cfg)

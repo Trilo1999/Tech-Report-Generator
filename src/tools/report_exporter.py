@@ -13,6 +13,8 @@ from typing import Any, Dict, List, Optional
 
 from docx import Document
 from docx.shared import Pt, RGBColor
+from langchain_core.tools import tool
+from pydantic import BaseModel, Field
 from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -485,3 +487,29 @@ def generate_report(
         return _build_pdf(content, output_path)
     else:
         return _build_docx(content, output_path)
+
+
+class ReportExporterInput(BaseModel):
+    """Input schema for report exporter tool."""
+
+    content: Dict[str, Any] = Field(
+        description="Structured report payload containing title, executive_summary, sections, cited_sources, and unsupported_claims.",
+    )
+    format: str = Field(
+        default="pdf",
+        description="Output document format ('pdf' or 'docx').",
+    )
+    output_filename: Optional[str] = Field(
+        default=None,
+        description="Optional explicit file name (e.g. 'report.pdf').",
+    )
+
+
+@tool("generate_report", args_schema=ReportExporterInput)
+def generate_report_tool(
+    content: Dict[str, Any],
+    format: str = "pdf",
+    output_filename: Optional[str] = None,
+) -> str:
+    """Export structured research report into professional PDF or DOCX format with formatted citations and charts."""
+    return generate_report(content=content, format=format, output_filename=output_filename)

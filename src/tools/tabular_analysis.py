@@ -7,8 +7,10 @@ statistics from benchmark_results.csv. Ensures non-hallucinatory numerical facts
 
 from pathlib import Path
 from typing import Any, Dict, Optional
+from langchain_core.tools import tool
 import numpy as np
 import pandas as pd
+from pydantic import BaseModel, Field
 
 from src.config import BENCHMARK_CSV
 
@@ -141,3 +143,31 @@ def analyze_csv(
         "data": result_data,
         "reliability_score": 1.0,
     }
+
+
+class TabularAnalysisInput(BaseModel):
+    operation: str = Field(
+        "summary_stats",
+        description="Calculation operation: 'summary_stats' (mean/min/max/std), 'latency_percentiles' (p50/p90/p95/p99), 'concurrency_scaling' (50/100/200 load tiers), or 'headroom_comparison'.",
+    )
+    filter_database: Optional[str] = Field(
+        None,
+        description="Optional entity or database name filter, e.g. 'PostgreSQL', 'MongoDB', 'AWS', 'Azure', 'Python', 'React'.",
+    )
+    file_path: Optional[str] = Field(
+        None,
+        description="Optional custom file path to benchmark CSV (defaults to benchmark_results.csv).",
+    )
+
+
+@tool("analyze_csv", args_schema=TabularAnalysisInput)
+def analyze_csv_tool(
+    operation: str = "summary_stats",
+    filter_database: Optional[str] = None,
+    file_path: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Execute deterministic Pandas analytical calculations on tabular benchmark telemetry data.
+    Computes exact throughput ops/sec, latency percentiles, and concurrency scaling.
+    """
+    return analyze_csv(file_path=file_path, operation=operation, filter_database=filter_database)
