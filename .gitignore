@@ -19,8 +19,9 @@ data/qdrant_storage/
 # FastEmbed cache
 data/cache/
 
-# Checkpoints
-data/checkpoints.db*
+# Checkpoints & Auth DB
+data/*.db*
+data/tasks_registry.json
 
 # Node / Frontend
 node_modules/

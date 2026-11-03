@@ -59,6 +59,66 @@
       "date": "2024-07-30",
       "reliability_score": 0.93,
       "snippet": "Both PostgreSQL and MongoDB support region-pinned deployments for data sovereignty compliance. PostgreSQL achieves this through logical replication with region-specific read replicas. MongoDB Atlas provides native zone-sharding for data residency. Organizations subject to GDPR or CCPA should ensure tenant data isolation is verifiable through audit logs, which both platforms support with enterprise-tier features."
+    },
+    {
+      "id": "EXT-07",
+      "title": "Frontend Framework Performance: React 18 Virtual DOM vs Angular 17 Signals",
+      "url": "https://frontend-arch.org/react-vs-angular-performance-2024",
+      "author": "Marcus Vance",
+      "publication": "Frontend Architecture Quarterly",
+      "date": "2024-08-14",
+      "reliability_score": 0.94,
+      "snippet": "In large-scale enterprise benchmarks across 1,000+ dynamic data grid cells, React with Concurrent Rendering demonstrated 28% faster initial render times (7.4ms vs 12.8ms p50) and 42% lower peak JavaScript heap memory allocation compared to Angular Zone.js. Both React and Angular are completely free open-source frameworks (MIT License) with $0.00 software licensing or seat fees; financial differences stem solely from edge CDN delivery vs SSR server compute. Angular's new Signals reactivity model significantly closes the gap for fine-grained localized mutations, but React's lightweight baseline footprint (42KB gzip vs Angular's 138KB baseline bundle) delivers superior mobile time-to-interactive and micro-frontend agility."
+    },
+    {
+      "id": "EXT-08",
+      "title": "Enterprise Maintainability and Architectural Governance: Angular vs React",
+      "url": "https://enterprise-eng.com/angular-vs-react-governance",
+      "author": "Samantha Reed",
+      "publication": "Enterprise Engineering Review",
+      "date": "2024-09-02",
+      "reliability_score": 0.91,
+      "snippet": "Angular provides an all-inclusive batteries-included framework out of the box with strict dependency injection, first-class TypeScript integration, built-in routing, HttpClient, RxJS streams, and standardized CLI scaffolding. Both React and Angular are 100% free open-source solutions under the permissive MIT license ($0.00 license fee). For large distributed enterprise teams with hundreds of developers, Angular eliminates architectural drift and tooling fragmentation. Conversely, React is a view library requiring teams to assemble and maintain custom state management, routing, and testing stacks, introducing ongoing architectural governance costs."
+    },
+    {
+      "id": "EXT-09",
+      "title": "LLM Backend Integration Architecture: Python Asyncio vs Java Enterprise Ecosystem",
+      "url": "https://ai-systems-journal.io/python-vs-java-llm-integration",
+      "author": "Dr. Vivek Sharma",
+      "publication": "AI Systems Engineering Journal",
+      "date": "2024-07-19",
+      "reliability_score": 0.95,
+      "snippet": "Python is the undisputed primary ecosystem for generative AI and LLM orchestration, offering native first-class SDKs for LangChain, LlamaIndex, LiteLLM, vLLM, and Hugging Face. Python's dynamic typing and asyncio paradigm accelerate prototype-to-production cycles by 35%. However, for high-throughput enterprise inference routing, Java (via Spring AI and LangChain4j) demonstrates superior CPU multi-threading, higher concurrent connection saturation (4,400 vs 3,200 ops/sec), and zero GIL contention under heavy token streaming."
+    },
+    {
+      "id": "EXT-10",
+      "title": "Operational TCO and Container Footprint in AI Engineering: Python vs Java",
+      "url": "https://finops-cloud.com/ai-runtime-tco-python-java",
+      "author": "David Lin",
+      "publication": "Cloud & FinOps Strategy",
+      "date": "2024-05-11",
+      "reliability_score": 0.89,
+      "snippet": "Container footprint analysis reveals Python microservices achieve an average Docker image size of 280MB and baseline memory overhead of 95MB compared to JVM container base of 1.2GB and 450MB heap allocation. For 12-month cloud TCO, optimized Python inference orchestrators demonstrate an estimated 15-20% total cost advantage in hosting and scaling tiers, although Java's JIT compiler delivers lower steady-state CPU utilization under sustained peak loads exceeding 10,000 requests/second."
+    },
+    {
+      "id": "EXT-11",
+      "title": "Multi-Cloud TCO Analysis: AWS vs GCP Microservices Architecture",
+      "url": "https://cloud-economics.net/aws-vs-gcp-tco-2024",
+      "author": "Rachel Green",
+      "publication": "Cloud Infrastructure Economics",
+      "date": "2024-06-30",
+      "reliability_score": 0.93,
+      "snippet": "In normalized 3-tier microservice architecture evaluations, Google Cloud Platform (GCP) delivers an 8-12% price-performance advantage for Kubernetes workloads via Google Kubernetes Engine (GKE) Autopilot and automatic Sustained Use Discounts (SUD). AWS maintains a decisive global lead in service breadth, VPC enterprise peering topologies, and GovCloud compliance accreditations. For compute-intensive workloads, GCP's custom machine types allow right-sizing vCPU and RAM without over-provisioning waste."
+    },
+    {
+      "id": "EXT-12",
+      "title": "Network Egress and Data Gravity: AWS vs Google Cloud Cost Governance",
+      "url": "https://devops-finops.org/aws-gcp-network-egress",
+      "author": "Kenji Sato",
+      "publication": "DevOps & Cloud Financial Management",
+      "date": "2024-08-25",
+      "reliability_score": 0.92,
+      "snippet": "Network egress charges represent the fastest growing variable cost in distributed enterprise architectures. AWS charges $0.09/GB for standard internet egress with tiered volume discounts, while GCP's Premium Tier network charges $0.08-$0.12/GB. GCP's Cloud Interconnect delivers predictable cross-region latencies averaging 15% lower than AWS across transatlantic routes, but AWS Transit Gateway provides superior routing policy control for complex hybrid multi-account topologies."
     }
   ],
   "search_config": {

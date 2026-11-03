@@ -106,4 +106,51 @@ documented in an Architecture Decision Record (ADR):
 
 ---
 
+## 5. Frontend Single-Page Application (SPA) Framework Standards
+
+### 5.1 Architecture & Component Governance
+- **React**: Preferred for highly modular applications requiring custom design systems, micro-frontend decomposition, and rapid ecosystem flexibility. State governance must be formalized using Redux Toolkit, Zustand, or TanStack Query to prevent state fragmentation.
+- **Angular**: Recommended for large enterprise portfolios requiring rigid structural uniformity, built-in dependency injection, and standardized TypeScript scaffolding across multi-team monorepos.
+
+### 5.2 Performance & Bundle Size Budgets
+- Baseline initial JavaScript bundle size **MUST** remain below 150KB (gzipped).
+- First Contentful Paint (FCP) must be achieved within ≤ 1.2s on mobile 4G.
+- Time to Interactive (TTI) must not exceed 2.5s for core tenant portals.
+- React components must enforce memoization (`React.memo`, `useMemo`, `useCallback`) for data tables exceeding 50 rows.
+- Angular applications must utilize `ChangeDetectionStrategy.OnPush` or Angular Signals for localized state updates.
+
+### 5.3 Software Licensing & Framework Cost ($0.00 Open Source)
+- **Zero-Dollar Software License ($0.00)**: Both **React** (Meta open-source, MIT License) and **Angular** (Google open-source, MIT License) are completely **free, open-source frameworks** with **$0.00 software license, subscription, or per-seat vendor fees**.
+- **Attributable TCO Factors**: The financial Total Cost of Ownership between React and Angular is determined exclusively by:
+  1. **Cloud & Edge Compute Infrastructure**: Edge CDN distribution ($0.22/hr edge serverless) vs Server-Side Rendering container hosting ($0.38/hr Node.js SSR runtime).
+  2. **Developer Velocity & Engineering Maintenance**: React offers ~2.5x faster library adoption and lower boilerplate, while Angular reduces third-party dependency maintenance through comprehensive out-of-the-box batteries.
+
+---
+
+## 6. Generative AI & LLM Runtime Integration Standards
+
+### 6.1 Backend Language & Runtime Selection
+- **Python (Asyncio / FastAPI)**: Primary standard for generative AI agent orchestration, LangGraph workflow execution, vector database embedding pipelines, and rapid model integration.
+- **Java (Spring AI / Quarkus)**: Authorized for high-throughput enterprise API gateways, core transactional persistence integration, and workloads requiring strictly typed enterprise message queues.
+
+### 6.2 Latency, Streaming & Concurrency SLOs
+- Streaming token Time-to-First-Token (TTFT) **MUST** be ≤ 800ms for conversational agent interfaces.
+- Agentic background workflows exceeding 5 seconds must execute as asynchronous tasks with checkpoint persistence and non-blocking status polling.
+- Multi-threaded or async connection pools must support at least 500 concurrent tenant agent executions without thread starvation.
+
+---
+
+## 7. Cloud Infrastructure & Microservices Standards
+
+### 7.1 Provider Strategy (AWS vs GCP)
+- Multi-tier services must be deployed in containerized Kubernetes environments (Amazon EKS or Google GKE) with standardized Helm charts to ensure cloud portability.
+- Workloads subject to strict federal compliance (FedRAMP High, DoD IL5) should default to AWS GovCloud.
+- Data-intensive analytical and machine learning workloads should prioritize GCP for BigQuery and GKE Autopilot cost efficiency.
+
+### 7.2 FinOps & Cost Governance
+- All persistent compute instances running continuously for > 6 months must leverage 1-year or 3-year Reserved Instances / Savings Plans (AWS) or Sustained/Committed Use Discounts (GCP).
+- Inter-region egress and cross-zone traffic must be minimized through localized service meshes and internal private peering.
+
+---
+
 *End of Document*

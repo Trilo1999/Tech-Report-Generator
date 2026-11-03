@@ -17,23 +17,35 @@ const STEPS = [
 
 export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({ state, isLoading }) => {
   const getStepStatus = (stepId: string): "step-active" | "step-done" | "" => {
-    if (isLoading && !state) {
-      return stepId === "plan" ? "step-active" : "";
+    if (!state) {
+      if (isLoading) return stepId === "plan" ? "step-active" : "";
+      return "";
     }
-    if (!state) return "";
 
-    const status = state.status;
+    const { status, is_running, draft_report, is_pending_review } = state;
+
     if (status === "completed" || status === "approved") {
       return "step-done";
     }
 
-    if (stepId === "plan") return "step-done";
-    if (stepId === "gather") return "step-done";
-    if (stepId === "bench") return "step-done";
-    if (stepId === "eval") return "step-done";
-    if (stepId === "draft") return state.draft_report ? "step-done" : "step-active";
-    if (stepId === "review") return state.is_pending_review ? "step-active" : "";
+    if (is_running || status === "running") {
+      if (!draft_report) {
+        if (stepId === "plan") return "step-done";
+        if (stepId === "gather") return "step-active";
+        return "";
+      }
+      if (status === "review_resuming" || status === "processing") {
+        if (stepId === "review") return "step-active";
+        return "step-done";
+      }
+    }
 
+    if (draft_report) {
+      if (stepId !== "review") return "step-done";
+      if (is_pending_review) return "step-active";
+    }
+
+    if (stepId === "plan") return "step-done";
     return "";
   };
 
