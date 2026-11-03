@@ -37,7 +37,9 @@ class IngestionService:
             logger.exception("Unexpected error saving file: %s", e)
             raise InternalError("File upload failed") from e
 
-    def ingest_file(self, file: UploadFile, saved_path: Optional[str] = None) -> Dict[str, Any]:
+    def ingest_file(
+        self, file: UploadFile, saved_path: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Save the file (if needed) and index it into the vector database.
 
         Args:
@@ -83,7 +85,9 @@ class IngestionService:
     async def trigger_document_ingestion(cls, current_user: Any) -> Dict[str, Any]:
         """Trigger document parsing, chunking, and vector indexing into Qdrant."""
         import asyncio
+
         from fastapi import HTTPException
+
         from app.services.core_services.qdrant_ingestion import (
             QDRANT_COLLECTION_NAME,
             get_qdrant_client,
@@ -91,7 +95,9 @@ class IngestionService:
         )
 
         try:
-            total_indexed = await asyncio.to_thread(ingest_all_documents, force_recreate=True)
+            total_indexed = await asyncio.to_thread(
+                ingest_all_documents, force_recreate=True
+            )
             client = get_qdrant_client()
             info = client.get_collection(collection_name=QDRANT_COLLECTION_NAME)
             email = getattr(current_user, "email", str(current_user))
@@ -113,6 +119,7 @@ class IngestionService:
     def get_ingestion_status(cls) -> Dict[str, Any]:
         """Inspect the current Qdrant vector database collection status and indexed point count."""
         from fastapi import HTTPException
+
         from app.services.core_services.qdrant_ingestion import (
             QDRANT_COLLECTION_NAME,
             get_qdrant_client,

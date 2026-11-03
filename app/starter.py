@@ -53,7 +53,9 @@ def start_application():
             logger.exception("Admin bootstrap failed: %s", e)
             raise
     else:
-        logger.info("SQL disabled. Skipping database initialization and admin bootstrap.")
+        logger.info(
+            "SQL disabled. Skipping database initialization and admin bootstrap."
+        )
 
     # EXCEPTION HANDLERS
     app.add_exception_handler(RequestValidationError, request_validation_handler)

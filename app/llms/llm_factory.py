@@ -19,6 +19,8 @@ def get_default_chat_client():
         from app.llms.openai_chat_client import default_chat_client
 
     else:
-        raise ValueError("No LLM provider configured. Set OPENAI_API_KEY or GEMINI_API_KEY")
+        raise ValueError(
+            "No LLM provider configured. Set OPENAI_API_KEY or GEMINI_API_KEY"
+        )
 
     return default_chat_client

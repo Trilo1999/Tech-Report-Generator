@@ -1,16 +1,20 @@
 """CLI service implementing OOP patterns for interactive research and server startup."""
 
 import argparse
-from pathlib import Path
 import sys
-from typing import Any, Dict, List
 import uuid
+from pathlib import Path
+from typing import Any, Dict, List
 
 import uvicorn
 
-from app.config.env_config import SERVER_HOST, SERVER_PORT
 from app.agents.graph.builder import create_research_graph
-from app.agents.graph.checkpoints import get_checkpointer, get_thread_state, resume_workflow
+from app.agents.graph.checkpoints import (
+    get_checkpointer,
+    get_thread_state,
+    resume_workflow,
+)
+from app.config.env_config import SERVER_HOST, SERVER_PORT
 
 
 class CLIService:
@@ -59,9 +63,13 @@ class CLIService:
             uvicorn.run("app.main:app", host=SERVER_HOST, port=SERVER_PORT, reload=True)
             return
 
-        self.execute_workflow(topic=args.topic, auto_approve=args.auto_approve, export_format=args.format)
+        self.execute_workflow(
+            topic=args.topic, auto_approve=args.auto_approve, export_format=args.format
+        )
 
-    def execute_workflow(self, topic: str, auto_approve: bool, export_format: str = "pdf") -> Dict[str, Any]:
+    def execute_workflow(
+        self, topic: str, auto_approve: bool, export_format: str = "pdf"
+    ) -> Dict[str, Any]:
         """Execute the end-to-end research workflow from the terminal."""
         thread_id = f"cli_{uuid.uuid4().hex[:8]}"
         print("=" * 70)
@@ -95,7 +103,9 @@ class CLIService:
             print(
                 f"  - Cost Advantage: {comp.get('cheaper_database', '').capitalize()} is {comp.get('savings_percentage')}% cheaper"
             )
-            print(f"  - Projected Savings: ${comp.get('projected_difference_amount'):,.2f}")
+            print(
+                f"  - Projected Savings: ${comp.get('projected_difference_amount'):,.2f}"
+            )
 
         draft = state.get("draft_report") or {}
         print(f"\n[Phase 2] Draft Report Synthesized: '{draft.get('title')}'")
@@ -136,7 +146,9 @@ class CLIService:
                     print(f"  {i}. {s}")
                 sec_idx = input("Enter section number to revise: ").strip()
                 target_sections = (
-                    [sec_keys[int(sec_idx) - 1]] if sec_idx.isdigit() and 1 <= int(sec_idx) <= len(sec_keys) else []
+                    [sec_keys[int(sec_idx) - 1]]
+                    if sec_idx.isdigit() and 1 <= int(sec_idx) <= len(sec_keys)
+                    else []
                 )
             elif choice == "x":
                 decision = "rejected"
@@ -154,7 +166,9 @@ class CLIService:
             "feedback_notes": feedback_notes,
             "target_sections": target_sections,
         }
-        final_state = resume_workflow(thread_id, review_payload, checkpointer=checkpointer)
+        final_state = resume_workflow(
+            thread_id, review_payload, checkpointer=checkpointer
+        )
 
         print("\n" + "=" * 70)
         print(f" Final Workflow Status: {final_state.get('status').upper()}")

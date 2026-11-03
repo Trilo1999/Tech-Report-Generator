@@ -8,10 +8,8 @@ from unittest.mock import patch
 
 from langchain_core.tools import BaseTool
 
-from app.agents.graph.builder import (
-    build_multi_agent_graph,
-    create_multi_agent_graph,
-)
+from app.agents.graph.builder import build_multi_agent_graph, create_multi_agent_graph
+from app.agents.graph.state import EvidenceItem, ResearchState
 from app.agents.graph.subagents import (
     analytics_agent,
     external_research_agent,
@@ -23,7 +21,6 @@ from app.agents.graph.supervisor import (
     route_supervisor,
     supervisor_agent,
 )
-from app.agents.graph.state import EvidenceItem, ResearchState
 from app.tools import (
     analyze_csv_tool,
     calculate_cost_tool,
@@ -54,7 +51,9 @@ def test_langchain_tools_are_structured_tools():
 
 def test_search_internal_documents_tool_invocation():
     """Verify invoking search_internal_documents_tool via LangChain invoke."""
-    results = search_internal_documents_tool.invoke({"query": "PostgreSQL ACID compliance", "limit": 2})
+    results = search_internal_documents_tool.invoke(
+        {"query": "PostgreSQL ACID compliance", "limit": 2}
+    )
     assert isinstance(results, list)
     assert len(results) > 0
     first = results[0]
@@ -65,7 +64,9 @@ def test_search_internal_documents_tool_invocation():
 
 def test_search_external_sources_tool_invocation():
     """Verify invoking search_external_sources_tool via LangChain invoke."""
-    results = search_external_sources_tool.invoke({"query": "MongoDB scaling and telemetry", "limit": 2})
+    results = search_external_sources_tool.invoke(
+        {"query": "MongoDB scaling and telemetry", "limit": 2}
+    )
     assert isinstance(results, list)
     assert len(results) > 0
     first = results[0]
@@ -131,7 +132,9 @@ def test_internal_research_subagent_execution():
     """Verify internal_research_agent queries Qdrant and records subagent history."""
     state: ResearchState = {
         "topic": "PostgreSQL Architecture",
-        "subquestions": ["How does PostgreSQL handle schema migration and ACID transactions?"],
+        "subquestions": [
+            "How does PostgreSQL handle schema migration and ACID transactions?"
+        ],
         "evidence": [],
         "calculations": {},
         "iteration_count": 0,
@@ -397,7 +400,9 @@ def test_rag_pipeline_external_search_and_analytics():
     # 2. Analytics Agent for RAG
     state: ResearchState = {
         "topic": "Naive RAG vs Advanced RAG Architecture & TCO",
-        "subquestions": ["How do Naive and Advanced RAG compare in retrieval latency and cost?"],
+        "subquestions": [
+            "How do Naive and Advanced RAG compare in retrieval latency and cost?"
+        ],
         "evidence": [],
         "calculations": {},
         "iteration_count": 0,
@@ -418,6 +423,7 @@ def test_rag_pipeline_external_search_and_analytics():
 def test_llm_autonomous_tool_calling_decision():
     """Verify that sub-agents execute LLM-decided tool calls when emitted, and log autonomous decision."""
     from unittest.mock import MagicMock
+
     from langchain_core.messages import AIMessage
 
     mock_llm = MagicMock()
@@ -454,7 +460,9 @@ def test_llm_autonomous_tool_calling_decision():
         assert len(history) > 0
         assert history[0]["llm_autonomous_decision"] is True
         assert len(history[0]["tool_calls_executed"]) == 1
-        assert history[0]["tool_calls_executed"][0]["tool"] == "search_internal_documents"
+        assert (
+            history[0]["tool_calls_executed"][0]["tool"] == "search_internal_documents"
+        )
         assert len(res["evidence"]) > 0
 
 
@@ -464,11 +472,16 @@ def test_llm_autonomous_tool_calling_decision():
 def test_orchestrator_planner_and_task_dispatch():
     """Verify orchestrator decomposes research into worker tasks and dispatches via Send."""
     from langgraph.types import Send
+
     from app.agents.graph.orchestrator import assign_worker_tasks, orchestrator_planner
 
     state: ResearchState = {
         "topic": "PostgreSQL vs MongoDB Architecture Evaluation",
-        "subquestions": ["How do schemas compare?", "What are latency numbers?", "What is TCO?"],
+        "subquestions": [
+            "How do schemas compare?",
+            "What are latency numbers?",
+            "What is TCO?",
+        ],
         "evidence": [],
         "calculations": {},
         "iteration_count": 0,
@@ -490,12 +503,19 @@ def test_orchestrator_planner_and_task_dispatch():
     assert len(sends) == len(tasks)
     for s in sends:
         assert isinstance(s, Send)
-        assert s.node in {"internal_research_worker", "external_research_worker", "analytics_worker"}
+        assert s.node in {
+            "internal_research_worker",
+            "external_research_worker",
+            "analytics_worker",
+        }
 
 
 def test_orchestrator_worker_graph_compilation_and_execution():
     """Verify full end-to-end execution of the Orchestrator-Worker pattern with Map-Reduce."""
-    from app.agents.graph.builder import build_orchestrator_worker_graph, create_orchestrator_worker_graph
+    from app.agents.graph.builder import (
+        build_orchestrator_worker_graph,
+        create_orchestrator_worker_graph,
+    )
 
     workflow = build_orchestrator_worker_graph()
     expected = {

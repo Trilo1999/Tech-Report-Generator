@@ -25,7 +25,9 @@ class MessageQueueClient:
         amqp_url = rabbitmq_config.get_amqp_url()
         return await connect_robust(amqp_url)
 
-    async def publish_json(self, queue_name: str, payload: JsonDict, *, persistent: bool = True) -> None:
+    async def publish_json(
+        self, queue_name: str, payload: JsonDict, *, persistent: bool = True
+    ) -> None:
         """Publish a JSON message to a durable queue (default exchange).
 
         Args:
@@ -42,13 +44,19 @@ class MessageQueueClient:
             message = Message(
                 body=body,
                 content_type="application/json",
-                delivery_mode=(DeliveryMode.PERSISTENT if persistent else DeliveryMode.NOT_PERSISTENT),
+                delivery_mode=(
+                    DeliveryMode.PERSISTENT
+                    if persistent
+                    else DeliveryMode.NOT_PERSISTENT
+                ),
             )
 
             await channel.default_exchange.publish(message, routing_key=queue_name)
             logger.info("Published message to queue=%s", queue_name)
 
-    async def consume_json(self, queue_name: str, handler: MessageHandler, *, prefetch: int = 10) -> None:
+    async def consume_json(
+        self, queue_name: str, handler: MessageHandler, *, prefetch: int = 10
+    ) -> None:
         """Consume JSON messages from a durable queue and call handler(payload, message).
 
         Args:

@@ -12,7 +12,9 @@ T = TypeVar("T", bound=BaseModel)
 class BaseRepository(Generic[T]):
     """Base repository class with common CRUD operations."""
 
-    def __init__(self, db: sqlite3.Connection, table_name: str, model_class: Type[T]) -> None:
+    def __init__(
+        self, db: sqlite3.Connection, table_name: str, model_class: Type[T]
+    ) -> None:
         """Initialize the base repository.
 
         Args:
@@ -90,7 +92,9 @@ class BaseRepository(Generic[T]):
         rows = self.db.execute(query).fetchall()
         return self._rows_to_models(rows)
 
-    def update(self, id: str, updated_by: Optional[str] = None, **fields) -> Optional[T]:
+    def update(
+        self, id: str, updated_by: Optional[str] = None, **fields
+    ) -> Optional[T]:
         """Update a record by ID.
 
         Args:
@@ -124,7 +128,9 @@ class BaseRepository(Generic[T]):
             values.append(utc_now_iso())
             values.append(id)
 
-            query = f"UPDATE {self.table_name} SET {', '.join(update_fields)} WHERE id = ?"
+            query = (
+                f"UPDATE {self.table_name} SET {', '.join(update_fields)} WHERE id = ?"
+            )
             self.db.execute(query, values)
             self.db.commit()
 

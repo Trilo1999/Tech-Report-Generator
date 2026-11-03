@@ -17,7 +17,9 @@ class RetrieverAgent(BaseAgent):
     def __init__(self) -> None:
         """Initialize the retriever agent with retriever tool and retrieval prompt."""
         tools = [RetrieverTool(collection_name=settings.COLLECTION_NAME)]
-        super().__init__(llm=get_default_chat_client(), tools=tools, system_prompt=RETRIEVAL_PROMPT)
+        super().__init__(
+            llm=get_default_chat_client(), tools=tools, system_prompt=RETRIEVAL_PROMPT
+        )
 
     def invoke(self, query: str, session_id: str):
         """Run the agent for a query and session.
@@ -39,7 +41,9 @@ class RetrieverAgent(BaseAgent):
 class RetrieverAgentToolInput(BaseModel):
     """Input schema for the retriever agent tool."""
 
-    query: str = Field(description="The query to retrieve documents from the vector database")
+    query: str = Field(
+        description="The query to retrieve documents from the vector database"
+    )
 
 
 class RetrieverAgentTool(BaseTool):

@@ -6,9 +6,9 @@ tabular benchmark summaries, unsupported claim callouts, and reference bibliogra
 into professional documents in the reports/ directory.
 """
 
+import re
 from datetime import datetime
 from pathlib import Path
-import re
 from typing import Any, Dict, List, Optional, Type
 
 from docx import Document
@@ -19,7 +19,14 @@ from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import (
+    HRFlowable,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 
 from app.config.env_config import REPORTS_DIR
 
@@ -83,9 +90,12 @@ def _resolve_source_details(
         return {
             "source_id": clean_id,
             "title": item.get("title") or f"Ground Source [{clean_id}]",
-            "category": item.get("source_type", "Ground Evidence").replace("_", " ").title(),
+            "category": item.get("source_type", "Ground Evidence")
+            .replace("_", " ")
+            .title(),
             "reliability": f"{int(float(item.get('reliability_score', 0.95)) * 100)}%",
-            "description": item.get("content", "")[:180] + ("..." if len(item.get("content", "")) > 180 else ""),
+            "description": item.get("content", "")[:180]
+            + ("..." if len(item.get("content", "")) > 180 else ""),
         }
     if clean_id in DEFAULT_SOURCE_METADATA:
         meta = DEFAULT_SOURCE_METADATA[clean_id]
@@ -201,7 +211,9 @@ def _build_pdf(content: Dict[str, Any], output_path: Path) -> str:
             meta_style,
         )
     )
-    story.append(HRFlowable(width="100%", thickness=1.5, color=secondary_color, spaceAfter=14))
+    story.append(
+        HRFlowable(width="100%", thickness=1.5, color=secondary_color, spaceAfter=14)
+    )
 
     # 2. Executive Summary Box (if present in sections)
     raw_sections = content.get("sections", {})
@@ -237,7 +249,9 @@ def _build_pdf(content: Dict[str, Any], output_path: Path) -> str:
         "• <b>[CSV-xx] Empirical Telemetry:</b> Reproducible stress-test benchmarks (measuring ops/sec throughput and p50/p95/p99 latency).<br/>"
         "• <b>[COST-xx] Cloud Financial TCO:</b> 12-to-36 month Total Cost of Ownership infrastructure projections."
     )
-    legend_table = Table([[Paragraph(legend_text, callout_style)]], colWidths=[7.0 * inch])
+    legend_table = Table(
+        [[Paragraph(legend_text, callout_style)]], colWidths=[7.0 * inch]
+    )
     legend_table.setStyle(
         TableStyle(
             [
@@ -256,15 +270,20 @@ def _build_pdf(content: Dict[str, Any], output_path: Path) -> str:
     # 3. Main Body Sections
     for sec_title, sec_body in sections.items():
         is_verdict_section = any(
-            v in sec_title.lower() for v in ("verdict", "recommendation", "decision matrix", "strategic")
+            v in sec_title.lower()
+            for v in ("verdict", "recommendation", "decision matrix", "strategic")
         )
         story.append(Paragraph(sec_title, h1_style))
         paragraphs = sec_body.split("\n\n")
 
         if is_verdict_section:
             # Wrap verdict & recommendations in a distinct callout box for clarity
-            verdict_paragraphs = [Paragraph(p.strip(), body_style) for p in paragraphs if p.strip()]
-            verdict_table = Table([[vp] for vp in verdict_paragraphs], colWidths=[7.0 * inch])
+            verdict_paragraphs = [
+                Paragraph(p.strip(), body_style) for p in paragraphs if p.strip()
+            ]
+            verdict_table = Table(
+                [[vp] for vp in verdict_paragraphs], colWidths=[7.0 * inch]
+            )
             verdict_table.setStyle(
                 TableStyle(
                     [
@@ -289,7 +308,15 @@ def _build_pdf(content: Dict[str, Any], output_path: Path) -> str:
     benchmark_data = content.get("benchmark_summary")
     if benchmark_data and isinstance(benchmark_data, dict):
         story.append(Paragraph("Performance Benchmark Summary", h1_style))
-        table_rows = [["Database", "Operation", "Mean Latency", "p95 Latency", "Throughput (ops/sec)"]]
+        table_rows = [
+            [
+                "Database",
+                "Operation",
+                "Mean Latency",
+                "p95 Latency",
+                "Throughput (ops/sec)",
+            ]
+        ]
         for db, ops in benchmark_data.items():
             if isinstance(ops, dict):
                 for op, metrics in ops.items():
@@ -304,7 +331,10 @@ def _build_pdf(content: Dict[str, Any], output_path: Path) -> str:
                             ]
                         )
         if len(table_rows) > 1:
-            t = Table(table_rows, colWidths=[1.4 * inch, 1.2 * inch, 1.4 * inch, 1.4 * inch, 1.6 * inch])
+            t = Table(
+                table_rows,
+                colWidths=[1.4 * inch, 1.2 * inch, 1.4 * inch, 1.4 * inch, 1.6 * inch],
+            )
             t.setStyle(
                 TableStyle(
                     [
@@ -327,7 +357,9 @@ def _build_pdf(content: Dict[str, Any], output_path: Path) -> str:
         story.append(Paragraph("Identified Gaps & Unsupported Claims", h1_style))
         unsupported_items = []
         for u in unsupported:
-            unsupported_items.append([Paragraph(f"• <b>[LIMITATION]</b> {u}", unsupported_style)])
+            unsupported_items.append(
+                [Paragraph(f"• <b>[LIMITATION]</b> {u}", unsupported_style)]
+            )
 
         u_table = Table(unsupported_items, colWidths=[7.0 * inch])
         u_table.setStyle(
@@ -354,7 +386,15 @@ def _build_pdf(content: Dict[str, Any], output_path: Path) -> str:
             evidence_map[item["source_id"]] = item
 
     if citations:
-        story.append(HRFlowable(width="100%", thickness=0.8, color=border_color, spaceBefore=8, spaceAfter=8))
+        story.append(
+            HRFlowable(
+                width="100%",
+                thickness=0.8,
+                color=border_color,
+                spaceBefore=8,
+                spaceAfter=8,
+            )
+        )
         story.append(Paragraph("References & Evidence Audit Trail", h1_style))
         for cit in citations:
             sid = cit.get("source_id") if isinstance(cit, dict) else str(cit)
@@ -364,7 +404,9 @@ def _build_pdf(content: Dict[str, Any], output_path: Path) -> str:
                 f"<i>{resolved['category']} (Confidence: {resolved['reliability']})</i>"
             )
             story.append(Paragraph(ref_header, meta_style))
-            desc_text = f"&nbsp;&nbsp;&nbsp;&nbsp;↳ <b>Context:</b> {resolved['description']}"
+            desc_text = (
+                f"&nbsp;&nbsp;&nbsp;&nbsp;↳ <b>Context:</b> {resolved['description']}"
+            )
             story.append(Paragraph(desc_text, body_style))
             story.append(Spacer(1, 4))
 
@@ -387,7 +429,9 @@ def _build_docx(content: Dict[str, Any], output_path: Path) -> str:
 
     # Metadata
     status = content.get("status", "APPROVED").upper()
-    meta_p = doc.add_paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y')} | Status: {status} | Cited Grounded")
+    meta_p = doc.add_paragraph(
+        f"Generated: {datetime.now().strftime('%B %d, %Y')} | Status: {status} | Cited Grounded"
+    )
     meta_p.runs[0].font.size = Pt(9)
     meta_p.runs[0].font.color.rgb = RGBColor(113, 128, 150)
 
@@ -506,7 +550,9 @@ class ReportExporter:
         self.reports_dir.mkdir(parents=True, exist_ok=True)
         fmt = format.lower().strip()
         if fmt not in ("pdf", "docx"):
-            raise ValueError(f"Unsupported report export format: '{format}'. Must be 'pdf' or 'docx'.")
+            raise ValueError(
+                f"Unsupported report export format: '{format}'. Must be 'pdf' or 'docx'."
+            )
 
         title = content.get("title", "research_report")
         base_name = output_filename or f"{self.sanitize_filename(title)}.{fmt}"
@@ -551,7 +597,9 @@ def generate_report_tool(
     output_filename: Optional[str] = None,
 ) -> str:
     """Export structured research report into professional PDF or DOCX format with formatted citations and charts."""
-    return generate_report(content=content, format=format, output_filename=output_filename)
+    return generate_report(
+        content=content, format=format, output_filename=output_filename
+    )
 
 
 class ReportExporterTool(BaseTool):
@@ -570,4 +618,6 @@ class ReportExporterTool(BaseTool):
         output_filename: Optional[str] = None,
     ) -> str:
         """Execute report export to PDF or DOCX."""
-        return default_report_exporter.export(content=content, format=format, output_filename=output_filename)
+        return default_report_exporter.export(
+            content=content, format=format, output_filename=output_filename
+        )

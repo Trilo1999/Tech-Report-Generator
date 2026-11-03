@@ -7,8 +7,8 @@ and integrates with LangGraph PostgresSaver checkpointer.
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional
 import uuid
+from typing import Any, Dict, List, Optional
 
 import psycopg
 from psycopg.errors import UniqueViolation
@@ -38,7 +38,9 @@ def is_postgres_available() -> bool:
         _POSTGRES_AVAILABLE = True
         return True
     except Exception as exc:
-        logger.info("PostgreSQL is not reachable (%s); falling back to local storage.", exc)
+        logger.info(
+            "PostgreSQL is not reachable (%s); falling back to local storage.", exc
+        )
         _POSTGRES_AVAILABLE = False
         return False
 
@@ -160,7 +162,9 @@ def pg_get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
     try:
         with get_postgres_conn() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM users WHERE email = %s", (email.strip().lower(),))
+                cur.execute(
+                    "SELECT * FROM users WHERE email = %s", (email.strip().lower(),)
+                )
                 return cur.fetchone()
     except Exception as exc:
         logger.error("pg_get_user_by_email failed: %s", exc)
@@ -263,14 +267,18 @@ def pg_get_task(thread_id: str) -> Optional[Dict[str, Any]]:
     try:
         with get_postgres_conn() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM research_tasks WHERE thread_id = %s", (thread_id,))
+                cur.execute(
+                    "SELECT * FROM research_tasks WHERE thread_id = %s", (thread_id,)
+                )
                 return cur.fetchone()
     except Exception as exc:
         logger.error("pg_get_task failed: %s", exc)
         return None
 
 
-def pg_list_tasks(user_id: Optional[str] = None, is_admin: bool = False) -> List[Dict[str, Any]]:
+def pg_list_tasks(
+    user_id: Optional[str] = None, is_admin: bool = False
+) -> List[Dict[str, Any]]:
     """List task dictionaries from PostgreSQL."""
     try:
         with get_postgres_conn() as conn:
@@ -288,13 +296,17 @@ def pg_list_tasks(user_id: Optional[str] = None, is_admin: bool = False) -> List
         return []
 
 
-def pg_delete_task(thread_id: str, user_id: Optional[str] = None, is_admin: bool = False) -> bool:
+def pg_delete_task(
+    thread_id: str, user_id: Optional[str] = None, is_admin: bool = False
+) -> bool:
     """Delete a task record from PostgreSQL."""
     try:
         with get_postgres_conn() as conn:
             with conn.cursor() as cur:
                 if is_admin or not user_id:
-                    cur.execute("DELETE FROM research_tasks WHERE thread_id = %s", (thread_id,))
+                    cur.execute(
+                        "DELETE FROM research_tasks WHERE thread_id = %s", (thread_id,)
+                    )
                 else:
                     cur.execute(
                         "DELETE FROM research_tasks WHERE thread_id = %s AND user_id = %s",

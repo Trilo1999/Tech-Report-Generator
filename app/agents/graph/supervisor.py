@@ -12,17 +12,17 @@ Implements the multi-agent supervisor pattern in LangGraph:
 - Routes to human_review when all evidence is validated and drafted.
 """
 
-from datetime import datetime, timezone
 import json
 import os
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from langchain_core.messages import HumanMessage
 
-from app.config.env_config import MAX_RESEARCH_ITERATIONS
 from app.agents.graph.nodes import _clean_json_response, get_llm
 from app.agents.graph.prompts import SUPERVISOR_PROMPT
 from app.agents.graph.state import ResearchState
+from app.config.env_config import MAX_RESEARCH_ITERATIONS
 
 
 class SupervisorCoordinator:
@@ -55,7 +55,9 @@ class SupervisorCoordinator:
                 counts["cost"] += 1
         return counts
 
-    def determine_next_agent_deterministic(self, state: ResearchState) -> Dict[str, Any]:
+    def determine_next_agent_deterministic(
+        self, state: ResearchState
+    ) -> Dict[str, Any]:
         """
         Deterministic rule-based supervisor routing logic.
         Provides reliable, zero-hallucination monitoring and fallback for offline/test modes.
@@ -69,7 +71,10 @@ class SupervisorCoordinator:
         # If in revision cycle
         if feedback and feedback.get("decision") == "revise":
             target_sections = feedback.get("target_sections", [])
-            if any("TCO" in sec or "Cost" in sec or "Benchmark" in sec for sec in target_sections):
+            if any(
+                "TCO" in sec or "Cost" in sec or "Benchmark" in sec
+                for sec in target_sections
+            ):
                 return {
                     "next_agent": "analytics_agent",
                     "reasoning": "Human reviewer requested revision targeting financial TCO or empirical performance benchmarks. Routing to analytics_agent.",
@@ -83,7 +88,8 @@ class SupervisorCoordinator:
 
         history = state.get("subagent_history", [])
         internal_attempted = any(
-            h.get("agent") == "internal_research_agent" or h.get("action") == "search_internal_documents"
+            h.get("agent") == "internal_research_agent"
+            or h.get("action") == "search_internal_documents"
             for h in history
         )
 
@@ -112,13 +118,18 @@ class SupervisorCoordinator:
             }
 
         # Step 4: Iterative sufficiency evaluation
-        is_fully_covered = manifest["external"] >= 1 and manifest["csv"] >= 1 and manifest["cost"] >= 1
+        is_fully_covered = (
+            manifest["external"] >= 1 and manifest["csv"] >= 1 and manifest["cost"] >= 1
+        )
         if not is_fully_covered and iteration < self.max_iterations:
             return {
                 "next_agent": "external_research_agent",
                 "reasoning": f"Evidence manifest has gaps (iteration {iteration}/{self.max_iterations}). Routing for additional research.",
                 "is_sufficient": False,
-                "missing_gaps": ["concurrency stress scaling", "reserved instance economics"],
+                "missing_gaps": [
+                    "concurrency stress scaling",
+                    "reserved instance economics",
+                ],
             }
 
         # Step 5: Drafting final publication
@@ -170,7 +181,11 @@ class SupervisorCoordinator:
                     draft_status="Drafted" if draft else "Pending",
                 )
                 response = llm.invoke([HumanMessage(content=prompt)])
-                text = str(response.content) if hasattr(response, "content") else str(response)
+                text = (
+                    str(response.content)
+                    if hasattr(response, "content")
+                    else str(response)
+                )
                 cleaned = _clean_json_response(text)
                 parsed = json.loads(cleaned)
 
@@ -183,10 +198,14 @@ class SupervisorCoordinator:
                 }
                 if parsed.get("next_agent") in valid_agents:
                     decision["next_agent"] = parsed["next_agent"]
-                    decision["reasoning"] = parsed.get("reasoning", decision["reasoning"])
+                    decision["reasoning"] = parsed.get(
+                        "reasoning", decision["reasoning"]
+                    )
                     if "is_sufficient" in parsed:
                         decision["is_sufficient"] = bool(parsed["is_sufficient"])
-                    if "identified_gaps" in parsed and isinstance(parsed["identified_gaps"], list):
+                    if "identified_gaps" in parsed and isinstance(
+                        parsed["identified_gaps"], list
+                    ):
                         decision["missing_gaps"] = parsed["identified_gaps"]
             except Exception:
                 pass
@@ -228,6 +247,8 @@ default_supervisor_coordinator = SupervisorCoordinator()
 
 # Backwards compatibility function aliases
 evaluate_evidence_manifest = SupervisorCoordinator.evaluate_manifest
-determine_next_agent_deterministic = default_supervisor_coordinator.determine_next_agent_deterministic
+determine_next_agent_deterministic = (
+    default_supervisor_coordinator.determine_next_agent_deterministic
+)
 supervisor_agent = default_supervisor_coordinator.execute_supervisor
 route_supervisor = default_supervisor_coordinator.route

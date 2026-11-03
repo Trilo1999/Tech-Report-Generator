@@ -13,7 +13,9 @@ class Settings:
         """Initialize settings from environment variables."""
         # 1. Project information
         self.ENV: str = os.getenv("ENV", "dev")
-        self.PROJECT_NAME: str = os.getenv("PROJECT_NAME", "AI-Research-Report-Generation-Agent")
+        self.PROJECT_NAME: str = os.getenv(
+            "PROJECT_NAME", "AI-Research-Report-Generation-Agent"
+        )
         self.PROJECT_VERSION: str = os.getenv("PROJECT_VERSION", "2.0.0")
         self.PROJECT_DESCRIPTION: str = os.getenv(
             "PROJECT_DESCRIPTION",
@@ -34,25 +36,39 @@ class Settings:
         self.BENCHMARK_CSV = self.SAMPLE_DATA_DIR / "benchmark_results.csv"
         self.CLOUD_PRICING_JSON = self.SAMPLE_DATA_DIR / "cloud_pricing.json"
         self.RESEARCH_SOURCES_JSON = self.SAMPLE_DATA_DIR / "research_sources.json"
-        self.ARCHITECTURE_GUIDELINES_MD = self.SAMPLE_DATA_DIR / "architecture_guidelines.md"
+        self.ARCHITECTURE_GUIDELINES_MD = (
+            self.SAMPLE_DATA_DIR / "architecture_guidelines.md"
+        )
         self.DATABASE_COMPARISON_PDF = self.SAMPLE_DATA_DIR / "database_comparison.pdf"
 
         # 3. API configuration
-        self.ALLOWED_ORIGINS: list[str] = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",") if o.strip()]
+        self.ALLOWED_ORIGINS: list[str] = [
+            o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",") if o.strip()
+        ]
         self.BASE_PATH: str = os.getenv("BASE_PATH", "")
         self.OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY", None)
-        self.GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY", None))
+        self.GEMINI_API_KEY: str | None = os.getenv(
+            "GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY", None)
+        )
 
         # 4. Hive AI and LLM Provider Settings
-        self.HIVE_SECRET_KEY: str = os.getenv("HIVE_SECRET_KEY", os.getenv("HIVE_API_KEY", ""))
-        self.HIVE_REGIONAL_COMPLIANCE: bool = os.getenv("HIVE_REGIONAL_COMPLIANCE", "false").lower() == "true"
+        self.HIVE_SECRET_KEY: str = os.getenv(
+            "HIVE_SECRET_KEY", os.getenv("HIVE_API_KEY", "")
+        )
+        self.HIVE_REGIONAL_COMPLIANCE: bool = (
+            os.getenv("HIVE_REGIONAL_COMPLIANCE", "false").lower() == "true"
+        )
         self.HIVE_BASE_URL: str = os.getenv(
             "HIVE_BASE_URL",
-            "https://api-va1.deploy.com/api/v1"
-            if self.HIVE_REGIONAL_COMPLIANCE
-            else "https://api-cdn.deploy.com/api/v1",
+            (
+                "https://api-va1.deploy.com/api/v1"
+                if self.HIVE_REGIONAL_COMPLIANCE
+                else "https://api-cdn.deploy.com/api/v1"
+            ),
         )
-        self.HIVE_MODEL_NAME: str = os.getenv("HIVE_MODEL_NAME", "deepseek-ai/deepseek-v4.1-flash-1017")
+        self.HIVE_MODEL_NAME: str = os.getenv(
+            "HIVE_MODEL_NAME", "deepseek-ai/deepseek-v4.1-flash-1017"
+        )
 
         if self.HIVE_SECRET_KEY:
             default_provider = "hive"
@@ -69,24 +85,38 @@ class Settings:
         self.LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.2"))
 
         # 5. Authentication configuration
-        self.JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "agentic-web-starter-jwt")
+        self.JWT_SECRET_KEY: str = os.getenv(
+            "JWT_SECRET_KEY", "agentic-web-starter-jwt"
+        )
         self.JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
-        self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+        self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(
+            os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+        )
 
         # 6. Admin configuration
-        self.ADMIN_USERNAME: str | None = os.getenv("ADMIN_USERNAME", "admin").strip() or None
-        self.ADMIN_EMAIL: str | None = os.getenv("ADMIN_EMAIL", "admin@antigravity.ai").strip() or None
-        self.ADMIN_PASSWORD: str | None = os.getenv("ADMIN_PASSWORD", "Admin@123").strip() or None
+        self.ADMIN_USERNAME: str | None = (
+            os.getenv("ADMIN_USERNAME", "admin").strip() or None
+        )
+        self.ADMIN_EMAIL: str | None = (
+            os.getenv("ADMIN_EMAIL", "admin@antigravity.ai").strip() or None
+        )
+        self.ADMIN_PASSWORD: str | None = (
+            os.getenv("ADMIN_PASSWORD", "Admin@123").strip() or None
+        )
 
         # 7. Working directory
         working_dir = os.path.abspath(os.getenv("WORKING_DIR", "app").strip() or "app")
         self.WORKING_PROJECT_DIR: str = os.path.join(working_dir, self.PROJECT_NAME)
         self.DB_PATH: str = os.path.join(working_dir, "sqlite_data", "app.db")
         self.LOG_DIR: str = os.path.join(self.WORKING_PROJECT_DIR, "logs")
-        self.UPLOAD_DIR: str = os.path.join(self.WORKING_PROJECT_DIR, "static", "uploads")
+        self.UPLOAD_DIR: str = os.path.join(
+            self.WORKING_PROJECT_DIR, "static", "uploads"
+        )
 
         # 8. Hugging Face & Embeddings
-        self.HF_HOME: str = os.getenv("HF_HOME", os.path.join(self.WORKING_PROJECT_DIR, "hf"))
+        self.HF_HOME: str = os.getenv(
+            "HF_HOME", os.path.join(self.WORKING_PROJECT_DIR, "hf")
+        )
         os.environ.setdefault("HF_HOME", self.HF_HOME)
         self.EMBEDDING_MODEL_NAME: str = "all-MiniLM-L6-v2"
         self.EMBEDDING_DIMENSION: int = 384
@@ -96,19 +126,24 @@ class Settings:
         # 9. Qdrant configuration
         self.COLLECTION_NAME: str = os.getenv("COLLECTION_NAME", "research_documents")
         self.QDRANT_COLLECTION_NAME: str = self.COLLECTION_NAME
-        self.USE_QDRANT: bool = os.getenv("USE_QDRANT", "true").strip().lower() == "true"
+        self.USE_QDRANT: bool = (
+            os.getenv("USE_QDRANT", "true").strip().lower() == "true"
+        )
         self.USE_REDIS: bool = os.getenv("USE_REDIS", "true").strip().lower() == "true"
         self.USE_SQL: bool = os.getenv("USE_SQL", "true").strip().lower() == "true"
 
         self.QDRANT_URL: str = os.getenv("QDRANT_URL", "http://localhost:6333")
-        self.QDRANT_PREFER_EMBEDDED: bool = os.getenv("QDRANT_PREFER_EMBEDDED", "false").lower() == "true"
+        self.QDRANT_PREFER_EMBEDDED: bool = (
+            os.getenv("QDRANT_PREFER_EMBEDDED", "false").lower() == "true"
+        )
         self.QDRANT_HOST: str = os.getenv("QDRANT_HOST", "localhost")
         self.QDRANT_PORT: str = os.getenv("QDRANT_PORT", "6333")
         self.QDRANT_PROTOCOL: str = os.getenv("QDRANT_PROTOCOL", "http")
 
         # 10. Persistence & Checkpointing
         self.POSTGRES_URL: str = os.getenv(
-            "POSTGRES_URL", "postgresql://postgres:postgrespassword@localhost:5432/research_agent"
+            "POSTGRES_URL",
+            "postgresql://postgres:postgrespassword@localhost:5432/research_agent",
         )
         self.SQLITE_DB_URL: str = f"sqlite:///{self.CHECKPOINT_DB_PATH}"
 
@@ -124,14 +159,20 @@ class Settings:
         self.REDIS_DB: str = os.getenv("REDIS_DB", "0")
 
         # 13. RabbitMQ configuration (optional)
-        self.USE_RABBITMQ: bool = os.getenv("USE_RABBITMQ", "true").strip().lower() == "true"
+        self.USE_RABBITMQ: bool = (
+            os.getenv("USE_RABBITMQ", "true").strip().lower() == "true"
+        )
         self.RABBITMQ_HOST: str = os.getenv("RABBITMQ_HOST", "rabbitmq")
         self.RABBITMQ_PORT: int = int(os.getenv("RABBITMQ_PORT", "5672"))
         self.RABBITMQ_USERNAME: str = os.getenv("RABBITMQ_USERNAME", "guest")
         self.RABBITMQ_PASSWORD: str = os.getenv("RABBITMQ_PASSWORD", "guest")
         self.RABBITMQ_VHOST: str = os.getenv("RABBITMQ_VHOST", "/")
-        self.RABBITMQ_AMQP_URL: str | None = os.getenv("RABBITMQ_AMQP_URL", "").strip() or None
-        self.RABBITMQ_INGEST_QUEUE: str = os.getenv("RABBITMQ_INGEST_QUEUE", "agentic_web_starter.ingestion")
+        self.RABBITMQ_AMQP_URL: str | None = (
+            os.getenv("RABBITMQ_AMQP_URL", "").strip() or None
+        )
+        self.RABBITMQ_INGEST_QUEUE: str = os.getenv(
+            "RABBITMQ_INGEST_QUEUE", "agentic_web_starter.ingestion"
+        )
 
         # 14. Server configuration
         self.SERVER_HOST: str = os.getenv("SERVER_HOST", "0.0.0.0")
@@ -139,11 +180,17 @@ class Settings:
 
         # 15. LangSmith Tracing
         self.LANGSMITH_TRACING: bool = (
-            os.getenv("LANGSMITH_TRACING", os.getenv("LANGCHAIN_TRACING_V2", "false")).lower() == "true"
+            os.getenv(
+                "LANGSMITH_TRACING", os.getenv("LANGCHAIN_TRACING_V2", "false")
+            ).lower()
+            == "true"
         )
-        self.LANGSMITH_API_KEY: str = os.getenv("LANGSMITH_API_KEY", os.getenv("LANGCHAIN_API_KEY", ""))
+        self.LANGSMITH_API_KEY: str = os.getenv(
+            "LANGSMITH_API_KEY", os.getenv("LANGCHAIN_API_KEY", "")
+        )
         self.LANGSMITH_PROJECT: str = os.getenv(
-            "LANGSMITH_PROJECT", os.getenv("LANGCHAIN_PROJECT", "ai-research-report-agent")
+            "LANGSMITH_PROJECT",
+            os.getenv("LANGCHAIN_PROJECT", "ai-research-report-agent"),
         )
         if self.LANGSMITH_TRACING and self.LANGSMITH_API_KEY:
             os.environ["LANGCHAIN_TRACING_V2"] = "true"

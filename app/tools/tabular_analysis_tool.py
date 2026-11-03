@@ -7,9 +7,10 @@ statistics from benchmark_results.csv. Ensures non-hallucinatory numerical facts
 
 from pathlib import Path
 from typing import Any, Dict, Optional, Type
-from langchain_core.tools import BaseTool, tool
+
 import numpy as np
 import pandas as pd
+from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 
 from app.config.env_config import BENCHMARK_CSV
@@ -35,14 +36,24 @@ class TabularAnalyzer:
         if df.empty:
             raise ValueError("Benchmark CSV file is empty")
 
-        required_columns = {"database", "operation", "latency_ms", "throughput_ops_sec", "concurrency_level"}
+        required_columns = {
+            "database",
+            "operation",
+            "latency_ms",
+            "throughput_ops_sec",
+            "concurrency_level",
+        }
         if not required_columns.issubset(set(df.columns)):
-            raise ValueError(f"CSV missing required benchmark columns: {required_columns - set(df.columns)}")
+            raise ValueError(
+                f"CSV missing required benchmark columns: {required_columns - set(df.columns)}"
+            )
 
         if filter_database:
             df = df[df["database"].str.lower() == filter_database.lower()]
             if df.empty:
-                raise ValueError(f"No records found matching database filter: {filter_database}")
+                raise ValueError(
+                    f"No records found matching database filter: {filter_database}"
+                )
 
         return df, csv_file
 
@@ -56,10 +67,16 @@ class TabularAnalyzer:
                 stats_dict[db] = {}
             stats_dict[db][op] = {
                 "mean_latency_ms": round(float(group["latency_ms"].mean()), 2),
-                "std_latency_ms": round(float(group["latency_ms"].std()), 2) if len(group) > 1 else 0.0,
+                "std_latency_ms": (
+                    round(float(group["latency_ms"].std()), 2)
+                    if len(group) > 1
+                    else 0.0
+                ),
                 "min_latency_ms": round(float(group["latency_ms"].min()), 2),
                 "max_latency_ms": round(float(group["latency_ms"].max()), 2),
-                "mean_throughput_ops_sec": round(float(group["throughput_ops_sec"].mean()), 2),
+                "mean_throughput_ops_sec": round(
+                    float(group["throughput_ops_sec"].mean()), 2
+                ),
                 "max_throughput_ops_sec": int(group["throughput_ops_sec"].max()),
                 "sample_count": int(len(group)),
             }
@@ -92,12 +109,24 @@ class TabularAnalyzer:
             if db not in scaling_dict:
                 scaling_dict[db] = {}
             scaling_dict[db][int(conc)] = {
-                "mean_read_latency_ms": round(float(group[group["operation"] == "read"]["latency_ms"].mean()), 2)
-                if any(group["operation"] == "read")
-                else None,
-                "mean_write_latency_ms": round(float(group[group["operation"] == "write"]["latency_ms"].mean()), 2)
-                if any(group["operation"] == "write")
-                else None,
+                "mean_read_latency_ms": (
+                    round(
+                        float(group[group["operation"] == "read"]["latency_ms"].mean()),
+                        2,
+                    )
+                    if any(group["operation"] == "read")
+                    else None
+                ),
+                "mean_write_latency_ms": (
+                    round(
+                        float(
+                            group[group["operation"] == "write"]["latency_ms"].mean()
+                        ),
+                        2,
+                    )
+                    if any(group["operation"] == "write")
+                    else None
+                ),
                 "total_throughput_ops_sec": int(group["throughput_ops_sec"].sum()),
             }
         return scaling_dict
@@ -111,10 +140,16 @@ class TabularAnalyzer:
             write_df = df[(df["database"] == db) & (df["operation"] == "write")]
             comparison[db] = {
                 "avg_read_latency_ms": round(float(read_df["latency_ms"].mean()), 2),
-                "p95_read_latency_ms": round(float(np.percentile(read_df["latency_ms"].values, 95)), 2),
+                "p95_read_latency_ms": round(
+                    float(np.percentile(read_df["latency_ms"].values, 95)), 2
+                ),
                 "avg_write_latency_ms": round(float(write_df["latency_ms"].mean()), 2),
-                "p95_write_latency_ms": round(float(np.percentile(write_df["latency_ms"].values, 95)), 2),
-                "peak_throughput_ops_sec": int(df[df["database"] == db]["throughput_ops_sec"].max()),
+                "p95_write_latency_ms": round(
+                    float(np.percentile(write_df["latency_ms"].values, 95)), 2
+                ),
+                "peak_throughput_ops_sec": int(
+                    df[df["database"] == db]["throughput_ops_sec"].max()
+                ),
             }
         return comparison
 
@@ -125,7 +160,9 @@ class TabularAnalyzer:
         filter_database: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute deterministic statistical calculations on tabular benchmark CSV data."""
-        df, csv_file = self.load_dataframe(file_path=file_path, filter_database=filter_database)
+        df, csv_file = self.load_dataframe(
+            file_path=file_path, filter_database=filter_database
+        )
 
         if operation == "summary_stats":
             result_data = self.compute_summary_stats(df)
@@ -184,7 +221,9 @@ def analyze_csv_tool(
     Execute deterministic Pandas analytical calculations on tabular benchmark telemetry data.
     Computes exact throughput ops/sec, latency percentiles, and concurrency scaling.
     """
-    return default_tabular_analyzer.analyze(file_path=file_path, operation=operation, filter_database=filter_database)
+    return default_tabular_analyzer.analyze(
+        file_path=file_path, operation=operation, filter_database=filter_database
+    )
 
 
 class TabularAnalysisTool(BaseTool):

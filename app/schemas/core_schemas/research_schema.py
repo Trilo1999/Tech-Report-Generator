@@ -2,6 +2,7 @@
 
 import operator
 from typing import Annotated, Any, Dict, List, Literal, Optional
+
 from pydantic import BaseModel, Field
 from typing_extensions import NotRequired, TypedDict
 
@@ -9,25 +10,42 @@ from typing_extensions import NotRequired, TypedDict
 class ResearchStartRequest(BaseModel):
     """Request payload to initiate a research workflow."""
 
-    topic: str = Field(..., description="Broad technical research topic or decision scope")
-    thread_id: Optional[str] = Field(None, description="Optional custom thread ID for persistence")
-    sync: Optional[bool] = Field(False, description="Whether to block synchronously (useful for tests and automation)")
+    topic: str = Field(
+        ..., description="Broad technical research topic or decision scope"
+    )
+    thread_id: Optional[str] = Field(
+        None, description="Optional custom thread ID for persistence"
+    )
+    sync: Optional[bool] = Field(
+        False,
+        description="Whether to block synchronously (useful for tests and automation)",
+    )
 
 
 class HumanReviewRequest(BaseModel):
     """Request payload for Human-in-the-Loop review verdicts."""
 
-    decision: Literal["approved", "revise", "rejected"] = Field(..., description="Human review decision")
-    feedback_notes: Optional[str] = Field("", description="Reviewer feedback or revision instructions")
-    target_sections: Optional[List[str]] = Field(default_factory=list, description="Sections to surgically modify")
-    sync: Optional[bool] = Field(False, description="Whether to block synchronously until review cycle completes")
+    decision: Literal["approved", "revise", "rejected"] = Field(
+        ..., description="Human review decision"
+    )
+    feedback_notes: Optional[str] = Field(
+        "", description="Reviewer feedback or revision instructions"
+    )
+    target_sections: Optional[List[str]] = Field(
+        default_factory=list, description="Sections to surgically modify"
+    )
+    sync: Optional[bool] = Field(
+        False, description="Whether to block synchronously until review cycle completes"
+    )
 
 
 class EvidenceItem(TypedDict):
     """Normalized evidence record collected from internal or external sources."""
 
     source_id: str  # Canonical ID: QDR-01, EXT-01, CSV-01, COST-01
-    source_type: Literal["internal_qdrant", "external_mock", "tabular_csv", "cost_calculation"]
+    source_type: Literal[
+        "internal_qdrant", "external_mock", "tabular_csv", "cost_calculation"
+    ]
     title: str
     content: str
     reliability_score: float
@@ -67,13 +85,17 @@ class WorkerTask(TypedDict):
     """Sub-task dispatched to a specialized worker subagent."""
 
     id: str
-    worker: Literal["internal_research_worker", "external_research_worker", "analytics_worker"]
+    worker: Literal[
+        "internal_research_worker", "external_research_worker", "analytics_worker"
+    ]
     description: str
     target_dimension: str
     query: str
 
 
-def merge_calculations(a: Optional[Dict[str, Any]], b: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def merge_calculations(
+    a: Optional[Dict[str, Any]], b: Optional[Dict[str, Any]]
+) -> Dict[str, Any]:
     """Reducer to merge calculation dictionaries across parallel orchestrator workers."""
     merged = dict(a) if a else {}
     if b and isinstance(b, dict):
@@ -86,8 +108,12 @@ class ResearchState(TypedDict):
 
     topic: str
     subquestions: List[str]
-    evidence: Annotated[List[EvidenceItem], operator.add]  # Monoid accumulator across loops
-    calculations: Annotated[Dict[str, Any], merge_calculations]  # Reducer merged dictionary
+    evidence: Annotated[
+        List[EvidenceItem], operator.add
+    ]  # Monoid accumulator across loops
+    calculations: Annotated[
+        Dict[str, Any], merge_calculations
+    ]  # Reducer merged dictionary
     iteration_count: int
     is_sufficient: bool
     missing_gaps: List[str]

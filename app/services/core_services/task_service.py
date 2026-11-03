@@ -161,7 +161,9 @@ class TaskManager:
         """Delete task from PostgreSQL and memory."""
         deleted_pg = False
         if is_postgres_available():
-            deleted_pg = pg_delete_task(thread_id=thread_id, user_id=user_id, is_admin=is_admin)
+            deleted_pg = pg_delete_task(
+                thread_id=thread_id, user_id=user_id, is_admin=is_admin
+            )
 
         task = self._tasks.get(thread_id)
         if not task:
@@ -198,7 +200,11 @@ class TaskManager:
                     task.is_pending_review = is_pending
                     task.evidence_count = len(values.get("evidence", []))
                     task.has_report = bool(values.get("draft_report"))
-                    task.status = "review_pending" if is_pending else values.get("status", "drafted")
+                    task.status = (
+                        "review_pending"
+                        if is_pending
+                        else values.get("status", "drafted")
+                    )
                     task.current_step = "human_review" if is_pending else "drafted"
                 else:
                     task.status = "drafted"
@@ -215,7 +221,9 @@ class TaskManager:
                 if is_postgres_available():
                     pg_save_task(task.to_dict())
 
-    async def execute_review_background(self, thread_id: str, review_payload: Dict[str, Any]) -> None:
+    async def execute_review_background(
+        self, thread_id: str, review_payload: Dict[str, Any]
+    ) -> None:
         """Execute review resumption in a background thread."""
         task = self._tasks.get(thread_id)
         if task:
@@ -240,7 +248,11 @@ class TaskManager:
                     task.is_pending_review = is_pending
                     task.evidence_count = len(values.get("evidence", []))
                     task.has_report = bool(values.get("draft_report"))
-                    task.status = "review_pending" if is_pending else values.get("status", "completed")
+                    task.status = (
+                        "review_pending"
+                        if is_pending
+                        else values.get("status", "completed")
+                    )
                     task.current_step = "human_review" if is_pending else "completed"
                 else:
                     task.status = "completed"
@@ -248,7 +260,9 @@ class TaskManager:
                 if is_postgres_available():
                     pg_save_task(task.to_dict())
         except Exception as exc:
-            logger.exception("Background review resumption failed for thread %s", thread_id)
+            logger.exception(
+                "Background review resumption failed for thread %s", thread_id
+            )
             if task:
                 task.is_running = False
                 task.status = "failed"

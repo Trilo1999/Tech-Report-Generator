@@ -1,14 +1,17 @@
 """Research workflow execution and task lifecycle service implementing OOP patterns."""
 
 import asyncio
-from typing import Any, Dict, List
 import uuid
+from typing import Any, Dict, List
 
 from fastapi import HTTPException
 
 from app.agents.graph.checkpoints import get_thread_state, resume_workflow
 from app.exceptions.domain import NotFoundError
-from app.schemas.core_schemas.research_schema import HumanReviewRequest, ResearchStartRequest
+from app.schemas.core_schemas.research_schema import (
+    HumanReviewRequest,
+    ResearchStartRequest,
+)
 from app.services.core_services.task_service import TaskManager, task_manager
 from app.services.iam_services.research_auth import User
 
@@ -27,12 +30,16 @@ class ResearchService:
     def delete_task(self, thread_id: str, current_user: User) -> Dict[str, Any]:
         """Delete a research task from user history."""
         is_admin = current_user.role == "admin"
-        deleted = self.manager.delete_task(thread_id=thread_id, user_id=current_user.id, is_admin=is_admin)
+        deleted = self.manager.delete_task(
+            thread_id=thread_id, user_id=current_user.id, is_admin=is_admin
+        )
         if not deleted:
             raise NotFoundError("Task not found or unauthorized to delete.")
         return {"status": "deleted", "thread_id": thread_id}
 
-    async def start_research(self, request: ResearchStartRequest, current_user: User) -> Dict[str, Any]:
+    async def start_research(
+        self, request: ResearchStartRequest, current_user: User
+    ) -> Dict[str, Any]:
         """Initialize a new research workflow thread as synchronous or background task."""
         thread_id = request.thread_id or f"research_{uuid.uuid4().hex[:12]}"
         self.manager.create_task(
@@ -46,11 +53,15 @@ class ResearchService:
             await self.manager.execute_research_background(thread_id, request.topic)
             task = self.manager.get_task(thread_id)
             if task and task.error:
-                raise HTTPException(status_code=500, detail=f"Workflow execution failed: {task.error}")
+                raise HTTPException(
+                    status_code=500, detail=f"Workflow execution failed: {task.error}"
+                )
 
             snapshot = get_thread_state(thread_id)
             if not snapshot:
-                raise HTTPException(status_code=500, detail="Workflow did not generate state snapshot.")
+                raise HTTPException(
+                    status_code=500, detail="Workflow did not generate state snapshot."
+                )
             values = snapshot["values"]
             return {
                 "thread_id": thread_id,
@@ -67,7 +78,9 @@ class ResearchService:
             }
 
         # Asynchronous non-blocking background task
-        asyncio.create_task(self.manager.execute_research_background(thread_id, request.topic))
+        asyncio.create_task(
+            self.manager.execute_research_background(thread_id, request.topic)
+        )
         return {
             "thread_id": thread_id,
             "task_id": thread_id,
@@ -112,19 +125,27 @@ class ResearchService:
                 "next": [],
                 "is_pending_review": False,
                 "error": task.error,
-                "message": "Research task is executing in background..." if task.is_running else None,
+                "message": (
+                    "Research task is executing in background..."
+                    if task.is_running
+                    else None
+                ),
             }
 
         values = snapshot["values"]
         is_running = task.is_running if task else False
-        status_val = task.status if (task and is_running) else values.get("status", "drafted")
+        status_val = (
+            task.status if (task and is_running) else values.get("status", "drafted")
+        )
         is_pending = "human_review" in snapshot.get("next", []) and not is_running
 
         if task and not is_running:
             task.is_pending_review = is_pending
             task.evidence_count = len(values.get("evidence", []))
             task.has_report = bool(values.get("draft_report"))
-            task.status = "review_pending" if is_pending else values.get("status", "drafted")
+            task.status = (
+                "review_pending" if is_pending else values.get("status", "drafted")
+            )
             self.manager.save_task(task)
 
         return {
@@ -149,7 +170,10 @@ class ResearchService:
         self, thread_id: str, request: HumanReviewRequest, current_user: User
     ) -> Dict[str, Any]:
         """Deliver human reviewer verdict to resume the paused thread."""
-        if request.decision in ["approved", "rejected"] and current_user.role not in ["admin", "reviewer"]:
+        if request.decision in ["approved", "rejected"] and current_user.role not in [
+            "admin",
+            "reviewer",
+        ]:
             raise HTTPException(
                 status_code=403,
                 detail=(
@@ -163,7 +187,9 @@ class ResearchService:
             raise NotFoundError(f"Research thread '{thread_id}' not found.")
 
         if "human_review" not in snapshot.get("next", []):
-            raise HTTPException(status_code=400, detail="Thread is not currently awaiting review.")
+            raise HTTPException(
+                status_code=400, detail="Thread is not currently awaiting review."
+            )
 
         review_payload = {
             "decision": request.decision,
@@ -175,7 +201,9 @@ class ResearchService:
             try:
                 final_state = resume_workflow(thread_id, review_payload)
             except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Resumption failed: {str(e)}")
+                raise HTTPException(
+                    status_code=500, detail=f"Resumption failed: {str(e)}"
+                )
 
             updated_snapshot = get_thread_state(thread_id)
             return {
@@ -185,10 +213,13 @@ class ResearchService:
                 "is_running": False,
                 "draft_report": final_state.get("draft_report"),
                 "final_report_path": final_state.get("final_report_path"),
-                "is_pending_review": "human_review" in (updated_snapshot.get("next", []) if updated_snapshot else []),
+                "is_pending_review": "human_review"
+                in (updated_snapshot.get("next", []) if updated_snapshot else []),
             }
 
-        asyncio.create_task(self.manager.execute_review_background(thread_id, review_payload))
+        asyncio.create_task(
+            self.manager.execute_review_background(thread_id, review_payload)
+        )
         return {
             "thread_id": thread_id,
             "task_id": thread_id,

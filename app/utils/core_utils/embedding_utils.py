@@ -7,7 +7,9 @@ try:
     from langchain_huggingface import HuggingFaceEmbeddings
 except ImportError:
     try:
-        from langchain_community.embeddings import FastEmbedEmbeddings as HuggingFaceEmbeddings
+        from langchain_community.embeddings import (
+            FastEmbedEmbeddings as HuggingFaceEmbeddings,
+        )
     except ImportError:
         HuggingFaceEmbeddings = None
 
@@ -15,7 +17,9 @@ except ImportError:
 class EmbeddingClient:
     """Factory for embeddings clients."""
 
-    def __init__(self, embedding_model_name: str = VECTOR_DB.EMBEDDING_MODEL.value) -> None:
+    def __init__(
+        self, embedding_model_name: str = VECTOR_DB.EMBEDDING_MODEL.value
+    ) -> None:
         """Initialize the embedding client.
 
         Args:
@@ -34,7 +38,9 @@ class EmbeddingClient:
 
             class _FastEmbedWrapper:
                 def __init__(self, model_name: str):
-                    self.model = TextEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+                    self.model = TextEmbedding(
+                        model_name="sentence-transformers/all-MiniLM-L6-v2"
+                    )
 
                 def embed_documents(self, texts: list[str]) -> list[list[float]]:
                     return [e.tolist() for e in self.model.embed(texts)]
@@ -58,7 +64,9 @@ class EmbeddingClient:
             )
         except Exception:
             try:
-                model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+                model = HuggingFaceEmbeddings(
+                    model_name="sentence-transformers/all-MiniLM-L6-v2"
+                )
             except Exception:
                 model = HuggingFaceEmbeddings()
         logger.info("Embedding model loaded.")

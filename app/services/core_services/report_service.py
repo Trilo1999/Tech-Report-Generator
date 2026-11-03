@@ -24,7 +24,11 @@ class ReportService:
         auth_credentials: Optional[HTTPAuthorizationCredentials] = None,
     ) -> FileResponse:
         """Download the final exported report in PDF or Microsoft Word (.docx) format."""
-        raw_token = auth_credentials.credentials if (auth_credentials and auth_credentials.credentials) else token
+        raw_token = (
+            auth_credentials.credentials
+            if (auth_credentials and auth_credentials.credentials)
+            else token
+        )
         if not raw_token:
             raise HTTPException(
                 status_code=401,
@@ -52,7 +56,8 @@ class ReportService:
         report_path_str = snapshot["values"].get("final_report_path")
         if not report_path_str:
             raise HTTPException(
-                status_code=400, detail="No exported report found. The proposal must be approved first."
+                status_code=400,
+                detail="No exported report found. The proposal must be approved first.",
             )
 
         report_path = Path(report_path_str)

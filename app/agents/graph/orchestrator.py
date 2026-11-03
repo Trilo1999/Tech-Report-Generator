@@ -11,25 +11,25 @@ Implements dynamic fan-out task dispatch (Map-Reduce) using the LangGraph Send A
 4. Orchestrator Synthesizer: Reduces and aggregates worker outputs into a grounded, cited technical report.
 """
 
-from datetime import datetime, timezone
 import json
 import os
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.types import Send
 
-from app.agents.graph.nodes import (
-    _clean_json_response,
-    draft_report as base_draft_report,
-    get_llm,
+from app.agents.graph.nodes import _clean_json_response
+from app.agents.graph.nodes import draft_report as base_draft_report
+from app.agents.graph.nodes import get_llm
+from app.agents.graph.state import ResearchState, WorkerTask
+from app.agents.graph.subagents import analytics_agent as base_analytics_agent
+from app.agents.graph.subagents import (
+    external_research_agent as base_external_research_agent,
 )
 from app.agents.graph.subagents import (
-    analytics_agent as base_analytics_agent,
-    external_research_agent as base_external_research_agent,
     internal_research_agent as base_internal_research_agent,
 )
-from app.agents.graph.state import ResearchState, WorkerTask
 
 ORCHESTRATOR_PLAN_PROMPT = """You are the Lead Technical Research Orchestrator.
 Your role is to analyze a research topic and dynamically break it down into a coordinated multi-worker execution plan.
@@ -116,16 +116,30 @@ class OrchestratorCoordinator:
                 prompt = self.plan_prompt.format(topic=topic)
                 response = llm.invoke(
                     [
-                        SystemMessage(content="You are an autonomous research orchestrator."),
+                        SystemMessage(
+                            content="You are an autonomous research orchestrator."
+                        ),
                         HumanMessage(content=prompt),
                     ]
                 )
-                text = str(response.content) if hasattr(response, "content") else str(response)
+                text = (
+                    str(response.content)
+                    if hasattr(response, "content")
+                    else str(response)
+                )
                 cleaned = _clean_json_response(text)
                 parsed = json.loads(cleaned)
 
-                if "tasks" in parsed and isinstance(parsed["tasks"], list) and len(parsed["tasks"]) > 0:
-                    valid_workers = {"internal_research_worker", "external_research_worker", "analytics_worker"}
+                if (
+                    "tasks" in parsed
+                    and isinstance(parsed["tasks"], list)
+                    and len(parsed["tasks"]) > 0
+                ):
+                    valid_workers = {
+                        "internal_research_worker",
+                        "external_research_worker",
+                        "analytics_worker",
+                    }
                     validated_tasks: List[WorkerTask] = []
                     for idx, t in enumerate(parsed["tasks"], start=1):
                         worker_name = t.get("worker", "external_research_worker")
@@ -135,7 +149,9 @@ class OrchestratorCoordinator:
                             WorkerTask(
                                 id=t.get("id", f"TASK-{idx:02d}"),
                                 worker=worker_name,
-                                description=t.get("description", f"Investigation for {topic}"),
+                                description=t.get(
+                                    "description", f"Investigation for {topic}"
+                                ),
                                 target_dimension=t.get("target_dimension", "general"),
                                 query=t.get("query", topic),
                             )
@@ -219,7 +235,9 @@ class OrchestratorCoordinator:
             "action": "synthesize_worker_outputs",
             "total_evidence_aggregated": len(state.get("evidence", [])),
             "calculations_available": list(state.get("calculations", {}).keys()),
-            "sections_synthesized": list(draft_result.get("draft_report", {}).get("sections", {}).keys()),
+            "sections_synthesized": list(
+                draft_result.get("draft_report", {}).get("sections", {}).keys()
+            ),
         }
 
         draft_result["subagent_history"] = [log_entry]

@@ -4,8 +4,8 @@ Uses PostgreSQL via PostgresSaver for all production graph runs.
 """
 
 import logging
-from pathlib import Path
 import sqlite3
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -13,8 +13,8 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 from psycopg_pool import ConnectionPool
 
-from app.config.env_config import POSTGRES_URL
 from app.agents.graph.builder import create_research_graph
+from app.config.env_config import POSTGRES_URL
 
 logger = logging.getLogger("research_agent.checkpoints")
 
@@ -61,7 +61,9 @@ def get_checkpointer(db_path: Optional[str | Path] = None) -> BaseCheckpointSave
         cp = PostgresSaver(_GLOBAL_PG_POOL)
         cp.setup()
         _GLOBAL_PG_CHECKPOINTER = cp
-        logger.info("LangGraph checkpointer initialized with PostgreSQL on %s", POSTGRES_URL)
+        logger.info(
+            "LangGraph checkpointer initialized with PostgreSQL on %s", POSTGRES_URL
+        )
 
     return _GLOBAL_PG_CHECKPOINTER
 

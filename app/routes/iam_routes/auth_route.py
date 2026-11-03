@@ -10,7 +10,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
-def login(request: LoginRequest, db: sqlite3.Connection = Depends(get_db)) -> TokenResponse:
+def login(
+    request: LoginRequest, db: sqlite3.Connection = Depends(get_db)
+) -> TokenResponse:
     """Authenticate user and return JWT.
 
     Args:

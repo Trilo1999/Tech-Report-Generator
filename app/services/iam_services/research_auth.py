@@ -9,8 +9,8 @@ import hashlib
 import hmac
 import json
 import time
-from typing import Any, Dict, List, Literal, Optional
 import uuid
+from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -121,10 +121,16 @@ def _b64_url_decode(s: str) -> bytes:
 def create_access_token(user: User, expires_delta_seconds: Optional[int] = None) -> str:
     """Generate RFC 7519 compliant HS256 JWT string."""
     header = {"alg": "HS256", "typ": "JWT"}
-    encoded_header = _b64_url_encode(json.dumps(header, separators=(",", ":"), sort_keys=True).encode("utf-8"))
+    encoded_header = _b64_url_encode(
+        json.dumps(header, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    )
 
     now = int(time.time())
-    exp = now + (expires_delta_seconds if expires_delta_seconds is not None else (JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60))
+    exp = now + (
+        expires_delta_seconds
+        if expires_delta_seconds is not None
+        else (JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+    )
 
     payload = {
         "sub": user.id,
@@ -134,10 +140,14 @@ def create_access_token(user: User, expires_delta_seconds: Optional[int] = None)
         "iat": now,
         "exp": exp,
     }
-    encoded_payload = _b64_url_encode(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8"))
+    encoded_payload = _b64_url_encode(
+        json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    )
 
     signing_input = f"{encoded_header}.{encoded_payload}".encode("utf-8")
-    signature = hmac.new(JWT_SECRET_KEY.encode("utf-8"), signing_input, hashlib.sha256).digest()
+    signature = hmac.new(
+        JWT_SECRET_KEY.encode("utf-8"), signing_input, hashlib.sha256
+    ).digest()
     encoded_sig = _b64_url_encode(signature)
 
     return f"{encoded_header}.{encoded_payload}.{encoded_sig}"
@@ -151,7 +161,9 @@ def decode_access_token(token: str) -> Dict[str, Any]:
 
     encoded_header, encoded_payload, encoded_sig = parts
     signing_input = f"{encoded_header}.{encoded_payload}".encode("utf-8")
-    expected_sig = hmac.new(JWT_SECRET_KEY.encode("utf-8"), signing_input, hashlib.sha256).digest()
+    expected_sig = hmac.new(
+        JWT_SECRET_KEY.encode("utf-8"), signing_input, hashlib.sha256
+    ).digest()
 
     try:
         actual_sig = _b64_url_decode(encoded_sig)
@@ -240,7 +252,9 @@ def get_user_by_id(user_id: str) -> Optional[UserInDB]:
     return None
 
 
-def create_user(email: str, name: str, password: str, role: RoleType = "researcher") -> User:
+def create_user(
+    email: str, name: str, password: str, role: RoleType = "researcher"
+) -> User:
     """Create and persist a new user exclusively in PostgreSQL."""
     clean_email = email.strip().lower()
     clean_name = name.strip()
@@ -248,7 +262,9 @@ def create_user(email: str, name: str, password: str, role: RoleType = "research
     # Reject if user already exists
     existing = get_user_by_email(clean_email)
     if existing:
-        raise HTTPException(status_code=400, detail="A user with this email already exists.")
+        raise HTTPException(
+            status_code=400, detail="A user with this email already exists."
+        )
 
     user_id = str(uuid.uuid4())
     pw_hash = hash_password(password)
@@ -266,11 +282,15 @@ def create_user(email: str, name: str, password: str, role: RoleType = "research
     try:
         success = pg_create_user(user_dict)
         if not success:
-            raise HTTPException(status_code=500, detail="Failed to persist user in PostgreSQL.")
+            raise HTTPException(
+                status_code=500, detail="Failed to persist user in PostgreSQL."
+            )
     except ValueError as val_err:
         raise HTTPException(status_code=400, detail=str(val_err)) from val_err
 
-    return User(id=user_id, email=clean_email, name=clean_name, role=role, created_at=now)
+    return User(
+        id=user_id, email=clean_email, name=clean_name, role=role, created_at=now
+    )
 
 
 # ──────────────────────────────────────────────
@@ -291,7 +311,13 @@ async def get_current_user_optional(
     user = get_user_by_id(payload.get("sub", ""))
     if not user:
         return None
-    return User(id=user.id, email=user.email, name=user.name, role=user.role, created_at=user.created_at)
+    return User(
+        id=user.id,
+        email=user.email,
+        name=user.name,
+        role=user.role,
+        created_at=user.created_at,
+    )
 
 
 async def get_current_user(
@@ -321,7 +347,13 @@ async def get_current_user(
             detail="User account no longer exists.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return User(id=user.id, email=user.email, name=user.name, role=user.role, created_at=user.created_at)
+    return User(
+        id=user.id,
+        email=user.email,
+        name=user.name,
+        role=user.role,
+        created_at=user.created_at,
+    )
 
 
 def require_roles(allowed_roles: List[RoleType]):

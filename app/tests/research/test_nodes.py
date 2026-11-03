@@ -15,7 +15,12 @@ from app.agents.graph.nodes import (
     plan_research,
     revise_sections,
 )
-from app.agents.graph.state import DraftReport, EvidenceItem, HumanFeedback, ResearchState
+from app.agents.graph.state import (
+    DraftReport,
+    EvidenceItem,
+    HumanFeedback,
+    ResearchState,
+)
 
 
 def test_state_schema_structure():
@@ -110,8 +115,12 @@ def test_gather_evidence_node():
     assert len(evidence) > 0, "Should retrieve evidence items"
 
     source_ids = [e["source_id"] for e in evidence]
-    assert any(sid.startswith("QDR-") for sid in source_ids), "Should retrieve internal Qdrant evidence"
-    assert any(sid.startswith("EXT-") for sid in source_ids), "Should retrieve external mock evidence"
+    assert any(
+        sid.startswith("QDR-") for sid in source_ids
+    ), "Should retrieve internal Qdrant evidence"
+    assert any(
+        sid.startswith("EXT-") for sid in source_ids
+    ), "Should retrieve external mock evidence"
     assert result["status"] == "gathering"
 
 
@@ -203,7 +212,9 @@ def test_evaluate_evidence_loop_and_max_iterations():
 
     res_max = evaluate_evidence(state_iter_1)
     assert res_max["iteration_count"] == 2
-    assert res_max["is_sufficient"] is True, "Must force is_sufficient=True on max iterations"
+    assert (
+        res_max["is_sufficient"] is True
+    ), "Must force is_sufficient=True on max iterations"
     assert res_max["missing_gaps"] == []
 
 
@@ -261,10 +272,14 @@ def test_draft_report_node():
 
     # Check that sources are cited
     assert len(draft["cited_sources"]) > 0
-    assert any("QDR-" in c or "CSV-" in c or "COST-" in c for c in draft["cited_sources"])
+    assert any(
+        "QDR-" in c or "CSV-" in c or "COST-" in c for c in draft["cited_sources"]
+    )
 
     # Check unsupported claims flagging
-    assert len(result["unsupported_claims"]) > 0, "Must flag unsupported claims per acceptance criteria"
+    assert (
+        len(result["unsupported_claims"]) > 0
+    ), "Must flag unsupported claims per acceptance criteria"
     assert result["status"] == "drafted"
 
 
@@ -296,12 +311,17 @@ def test_human_review_node_interrupt_approval():
         "target_sections": [],
     }
 
-    with patch("app.agents.graph.nodes.interrupt", return_value=mock_review_payload) as mock_interrupt:
+    with patch(
+        "app.agents.graph.nodes.interrupt", return_value=mock_review_payload
+    ) as mock_interrupt:
         result = human_review(state)
         mock_interrupt.assert_called_once()
         assert result["status"] == "approved"
         assert result["human_feedback"]["decision"] == "approved"
-        assert result["human_feedback"]["feedback_notes"] == "Architecture validated by enterprise committee."
+        assert (
+            result["human_feedback"]["feedback_notes"]
+            == "Architecture validated by enterprise committee."
+        )
 
 
 def test_human_review_node_interrupt_revise():
@@ -331,7 +351,9 @@ def test_human_review_node_interrupt_revise():
         result = human_review(state)
         assert result["status"] == "review_pending"
         assert result["human_feedback"]["decision"] == "revise"
-        assert result["human_feedback"]["target_sections"] == ["TCO & Cloud Cost Projection"]
+        assert result["human_feedback"]["target_sections"] == [
+            "TCO & Cloud Cost Projection"
+        ]
 
 
 def test_revise_sections_surgical_update():
@@ -384,15 +406,23 @@ def test_revise_sections_surgical_update():
 
     # Target section must be modified
     assert "36-month" in updated_sections["TCO & Cloud Cost Projection"]
-    assert updated_sections["TCO & Cloud Cost Projection"] != original_sections["TCO & Cloud Cost Projection"]
+    assert (
+        updated_sections["TCO & Cloud Cost Projection"]
+        != original_sections["TCO & Cloud Cost Projection"]
+    )
 
     # Untargeted sections MUST remain exactly identical (no regression)
-    assert updated_sections["Executive Summary"] == original_sections["Executive Summary"]
+    assert (
+        updated_sections["Executive Summary"] == original_sections["Executive Summary"]
+    )
     assert (
         updated_sections["Architecture & Data Model Comparison"]
         == original_sections["Architecture & Data Model Comparison"]
     )
-    assert updated_sections["Performance & Benchmark Analysis"] == original_sections["Performance & Benchmark Analysis"]
+    assert (
+        updated_sections["Performance & Benchmark Analysis"]
+        == original_sections["Performance & Benchmark Analysis"]
+    )
     assert (
         updated_sections["Strategic Recommendations & Trade-offs"]
         == original_sections["Strategic Recommendations & Trade-offs"]
@@ -450,7 +480,9 @@ def test_evaluate_evidence_conflicting_and_missing_evidence():
     # 1. Test missing evidence detection
     state_missing: ResearchState = {
         "topic": "PostgreSQL vs MongoDB Multi-Tenant Scaling",
-        "subquestions": ["How do PostgreSQL and MongoDB perform under 200 concurrent connections?"],
+        "subquestions": [
+            "How do PostgreSQL and MongoDB perform under 200 concurrent connections?"
+        ],
         "evidence": [
             {
                 "source_id": "QDR-01",
@@ -474,13 +506,17 @@ def test_evaluate_evidence_conflicting_and_missing_evidence():
     }
 
     eval_missing = evaluate_evidence(state_missing)
-    assert eval_missing["is_sufficient"] is False, "Must declare insufficient when external/csv/cost are missing"
+    assert (
+        eval_missing["is_sufficient"] is False
+    ), "Must declare insufficient when external/csv/cost are missing"
     assert len(eval_missing["missing_gaps"]) > 0
 
     # 2. Test conflicting evidence detection between external source and empirical benchmark
     state_conflicting: ResearchState = {
         "topic": "PostgreSQL vs MongoDB Multi-Tenant Scaling",
-        "subquestions": ["How do PostgreSQL and MongoDB perform under 200 concurrent connections?"],
+        "subquestions": [
+            "How do PostgreSQL and MongoDB perform under 200 concurrent connections?"
+        ],
         "evidence": [
             {
                 "source_id": "QDR-01",
@@ -530,8 +566,12 @@ def test_evaluate_evidence_conflicting_and_missing_evidence():
     eval_conflicts = evaluate_evidence(state_conflicting)
     assert "conflicting_evidence" in eval_conflicts
     conflicts = eval_conflicts["conflicting_evidence"]
-    assert len(conflicts) > 0, "Must detect contradiction between external whitepaper and empirical benchmark"
-    assert any(c["source_a_id"] == "EXT-01" and c["source_b_id"] == "CSV-01" for c in conflicts)
+    assert (
+        len(conflicts) > 0
+    ), "Must detect contradiction between external whitepaper and empirical benchmark"
+    assert any(
+        c["source_a_id"] == "EXT-01" and c["source_b_id"] == "CSV-01" for c in conflicts
+    )
 
 
 def test_draft_report_reconciles_conflicting_evidence():

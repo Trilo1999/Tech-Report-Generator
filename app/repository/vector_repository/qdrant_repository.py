@@ -52,7 +52,9 @@ class QdrantRepository:
         model = VECTOR_DB.EMBEDDING_MODEL.value
         return f"{base}_{self._normalize_model_name(model)}"
 
-    def build_vectordb(self, collection_name: Optional[str] = None) -> QdrantVectorStore:
+    def build_vectordb(
+        self, collection_name: Optional[str] = None
+    ) -> QdrantVectorStore:
         """Create and return a Qdrant-backed vector store.
 
         Args:
@@ -86,7 +88,9 @@ class QdrantRepository:
             )
         except Exception as exc:
             logger.error("Error initializing qdrant vectordb: %s", exc)
-            raise ValueError(f"Please make sure qdrant db is running on port 6333: {str(exc)}") from exc
+            raise ValueError(
+                f"Please make sure qdrant db is running on port 6333: {str(exc)}"
+            ) from exc
 
         return vectordb
 
