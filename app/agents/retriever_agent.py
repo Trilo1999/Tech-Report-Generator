@@ -6,16 +6,20 @@ from pydantic.v1 import BaseModel, Field
 from app.agents.base_agent import BaseAgent
 from app.config.env_config import settings
 from app.prompts.retrieval_prompt import RETRIEVAL_PROMPT
+from app.tools.external_search_tool import search_external_sources_tool
 from app.tools.retriever_tool import RetrieverTool
 
 
 # AGENT
 class RetrieverAgent(BaseAgent):
-    """Agent that retrieves documents before answering."""
+    """Agent that retrieves documents or conducts technical research before answering."""
 
     def __init__(self, llm=None) -> None:
-        """Initialize the retriever agent with retriever tool and retrieval prompt."""
-        tools = [RetrieverTool(collection_name=settings.COLLECTION_NAME)]
+        """Initialize the retriever agent with retriever tool, external search tool, and retrieval prompt."""
+        tools = [
+            RetrieverTool(collection_name=settings.COLLECTION_NAME),
+            search_external_sources_tool,
+        ]
         super().__init__(llm=llm, tools=tools, system_prompt=RETRIEVAL_PROMPT)
 
     def invoke(self, query: str, session_id: str):
