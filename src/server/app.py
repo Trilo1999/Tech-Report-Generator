@@ -427,3 +427,67 @@ async def download_report(
         filename=report_path.name,
         media_type="application/pdf",
     )
+
+
+@app.post("/api/research/ingest")
+async def trigger_ingestion(
+    current_user: User = Depends(require_roles(["admin", "researcher"])),
+) -> Dict[str, Any]:
+    """
+    Trigger document parsing, chunking, and vector indexing into Qdrant.
+    Parses database_comparison.pdf and architecture_guidelines.md, generates
+    384-dimensional dense vectors with FastEmbed, and indexes them into Qdrant.
+    Accessible to 'admin' and 'researcher' roles.
+    """
+    from src.ingestion.ingest_qdrant import (
+        QDRANT_COLLECTION_NAME,
+        get_qdrant_client,
+        ingest_all_documents,
+    )
+
+    try:
+        total_indexed = await asyncio.to_thread(ingest_all_documents, force_recreate=True)
+        client = get_qdrant_client()
+        info = client.get_collection(collection_name=QDRANT_COLLECTION_NAME)
+        return {
+            "status": "success",
+            "message": "Document ingestion and vector indexing completed successfully.",
+            "collection_name": QDRANT_COLLECTION_NAME,
+            "points_indexed": total_indexed,
+            "total_points": info.points_count or total_indexed,
+            "triggered_by": current_user.email,
+        }
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ingestion pipeline failed: {str(exc)}",
+        ) from exc
+
+
+@app.get("/api/research/ingest/status")
+async def get_ingestion_status(
+    current_user: User = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Inspect the current Qdrant vector database collection status and indexed point count.
+    Accessible to all authenticated users ('admin', 'researcher', 'reviewer', 'viewer').
+    """
+    from src.ingestion.ingest_qdrant import (
+        QDRANT_COLLECTION_NAME,
+        get_qdrant_client,
+    )
+
+    try:
+        client = get_qdrant_client()
+        info = client.get_collection(collection_name=QDRANT_COLLECTION_NAME)
+        return {
+            "collection_name": QDRANT_COLLECTION_NAME,
+            "status": str(info.status),
+            "points_count": info.points_count,
+            "vectors_count": info.vectors_count,
+        }
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to query Qdrant collection status: {str(exc)}",
+        ) from exc

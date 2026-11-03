@@ -7,6 +7,8 @@ Returns standardized [QDR-xx] source records with scores and source metadata.
 """
 
 from typing import Any, Dict, List, Optional
+from langchain_core.tools import tool
+from pydantic import BaseModel, Field
 from qdrant_client.models import FieldCondition, Filter, MatchValue
 
 from src.config import TOP_K_SEARCH_RESULTS
@@ -76,3 +78,37 @@ def search_internal_documents(
         )
 
     return results
+
+
+class InternalSearchInput(BaseModel):
+    query: str = Field(
+        ...,
+        description="Natural language semantic search query for internal guidelines, engineering policies, or architecture documentation.",
+    )
+    filters: Optional[Dict[str, Any]] = Field(
+        None,
+        description="Optional metadata key-value filters, e.g. {'doc_type': 'guideline'} or {'source_file': 'database_comparison.pdf'}.",
+    )
+    limit: int = Field(
+        TOP_K_SEARCH_RESULTS,
+        description=f"Maximum number of relevant chunks to retrieve (default: {TOP_K_SEARCH_RESULTS}).",
+    )
+    min_score: float = Field(
+        0.25,
+        description="Minimum cosine similarity score threshold (default: 0.25).",
+    )
+
+
+@tool("search_internal_documents", args_schema=InternalSearchInput)
+def search_internal_documents_tool(
+    query: str,
+    filters: Optional[Dict[str, Any]] = None,
+    limit: int = TOP_K_SEARCH_RESULTS,
+    min_score: float = 0.25,
+) -> List[Dict[str, Any]]:
+    """
+    Search proprietary internal engineering standards, architectural decision records,
+    and multi-tenant infrastructure guidelines indexed in the Qdrant vector database.
+    Returns ranked chunks tagged with [QDR-xx] identifiers.
+    """
+    return search_internal_documents(query=query, filters=filters, limit=limit, min_score=min_score)

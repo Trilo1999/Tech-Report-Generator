@@ -62,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
         </div>
-        <span>Antigravity AI</span>
+        <span>AI Research Agent</span>
         <span className="brand-badge">2.0 Engine</span>
       </div>
 

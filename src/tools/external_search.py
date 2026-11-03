@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 import re
 from typing import Any, Dict, List, Optional, Set
+from langchain_core.tools import tool
+from pydantic import BaseModel, Field
 
 from src.config import RESEARCH_SOURCES_JSON
 
@@ -146,3 +148,31 @@ def search_external_sources(
         )
 
     return results
+
+
+class ExternalSearchInput(BaseModel):
+    query: str = Field(
+        ...,
+        description="Research query string to search peer-reviewed analyst publications, industry whitepapers, and cloud architecture reviews.",
+    )
+    min_reliability: float = Field(
+        0.5,
+        description="Minimum reliability score threshold between 0.0 and 1.0 (default: 0.5).",
+    )
+    limit: int = Field(
+        4,
+        description="Maximum number of external sources to return (default: 4).",
+    )
+
+
+@tool("search_external_sources", args_schema=ExternalSearchInput)
+def search_external_sources_tool(
+    query: str,
+    min_reliability: float = 0.5,
+    limit: int = 4,
+) -> List[Dict[str, Any]]:
+    """
+    Search external analyst articles, benchmark publications, and cloud architecture whitepapers.
+    Returns ranked citations tagged with [EXT-xx] identifiers.
+    """
+    return search_external_sources(query=query, min_reliability=min_reliability, limit=limit)
