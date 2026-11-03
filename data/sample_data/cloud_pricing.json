@@ -52,6 +52,13 @@
       "price_per_hour": 0.48,
       "description": "AWS EC2 Enterprise Microservice Instance"
     },
+    "azure": {
+      "instance_type": "Standard_D4s_v5",
+      "vcpus": 4,
+      "memory_gb": 16,
+      "price_per_hour": 0.46,
+      "description": "Azure D4s v5 General Purpose Enterprise VM"
+    },
     "gcp": {
       "instance_type": "n2-standard-4",
       "vcpus": 4,
@@ -110,6 +117,13 @@
       "additional_iops_price": 0.005,
       "description": "AWS Elastic Block Store General Purpose SSD"
     },
+    "azure": {
+      "type": "Premium SSD v2 Disk",
+      "price_per_gb_month": 0.105,
+      "iops_included": 3200,
+      "additional_iops_price": 0.0045,
+      "description": "Azure Managed Premium SSD v2 Disk Storage"
+    },
     "gcp": {
       "type": "PD-SSD Persistent Disk",
       "price_per_gb_month": 0.11,
@@ -153,6 +167,11 @@
       "price_per_gb_month": 0.021,
       "retention_days": 14,
       "description": "AWS Backup unified snapshot policy"
+    },
+    "azure": {
+      "price_per_gb_month": 0.021,
+      "retention_days": 14,
+      "description": "Azure Backup Recovery Services Vault Snapshot Policy"
     },
     "gcp": {
       "price_per_gb_month": 0.020,
@@ -200,6 +219,11 @@
       "plan": "Business",
       "monthly_base": 100.00,
       "description": "AWS 24/7 Business Technical Support"
+    },
+    "azure": {
+      "plan": "Standard",
+      "monthly_base": 100.00,
+      "description": "Azure 24/7 Standard Business Support"
     },
     "gcp": {
       "plan": "Enhanced",

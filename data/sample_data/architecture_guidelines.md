@@ -147,8 +147,24 @@ documented in an Architecture Decision Record (ADR):
 - Workloads subject to strict federal compliance (FedRAMP High, DoD IL5) should default to AWS GovCloud.
 - Data-intensive analytical and machine learning workloads should prioritize GCP for BigQuery and GKE Autopilot cost efficiency.
 
-### 7.2 FinOps & Cost Governance
-- All persistent compute instances running continuously for > 6 months must leverage 1-year or 3-year Reserved Instances / Savings Plans (AWS) or Sustained/Committed Use Discounts (GCP).
+### 7.2 Cloud Provider Architecture: AWS vs Microsoft Azure Multi-Tenant Standards
+- **Compute and Container Orchestration**:
+  - AWS deployments must leverage Amazon Elastic Kubernetes Service (EKS) backed by EC2 m6i/c6i general-purpose compute instances or AWS Fargate serverless profiles for tenant compute isolation.
+  - Microsoft Azure deployments must leverage Azure Kubernetes Service (AKS) backed by D4s_v5 virtual machine scale sets with Azure CNI networking.
+- **Tenant Isolation & Account Topology**:
+  - AWS multi-tenant architectures MUST enforce hard account-level tenant boundaries using **AWS Organizations**, **AWS Control Tower**, Service Control Policies (SCPs), and IAM Permission Boundaries.
+  - Azure multi-tenant architectures MUST enforce separation using **Management Groups**, dedicated **Subscriptions**, and **Azure Policy** assignments coupled with Microsoft Entra ID (Azure AD) Conditional Access.
+- **Data Sovereignty, Compliance & Encryption**:
+  - Both AWS and Azure comply with mandatory Data Sovereignty requirements (GDPR, HIPAA, SOC 2 Type II, FedRAMP High).
+  - AWS uses KMS Customer Managed Keys (CMKs) with cryptographic multi-region key replication.
+  - Azure uses Azure Key Vault with Managed HSM and customer-managed keys (CMK) per subscription.
+- **Total Cost of Ownership & FinOps (AWS vs Azure)**:
+  - AWS workloads must configure 1-year or 3-year **AWS Savings Plans** (up to 72% discount on EC2/Fargate compute) and activate AWS Cost Explorer anomaly alerts.
+  - Azure workloads should utilize **Azure Reserved VM Instances** combined with **Azure Hybrid Benefit** (yielding up to 85% discount for existing Windows Server and SQL Server enterprise licenses).
+  - Internet data egress must be monitored against the standard ~$0.09/GB baseline across both cloud providers.
+
+### 7.3 FinOps & Cross-Cloud Cost Governance
+- All persistent compute instances running continuously for > 6 months must leverage 1-year or 3-year Reserved Instances / Savings Plans (AWS) or Sustained/Committed Use Discounts (GCP) or Azure Reserved Instances (Azure).
 - Inter-region egress and cross-zone traffic must be minimized through localized service meshes and internal private peering.
 
 ---

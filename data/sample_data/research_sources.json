@@ -119,6 +119,26 @@
       "date": "2024-08-25",
       "reliability_score": 0.92,
       "snippet": "Network egress charges represent the fastest growing variable cost in distributed enterprise architectures. AWS charges $0.09/GB for standard internet egress with tiered volume discounts, while GCP's Premium Tier network charges $0.08-$0.12/GB. GCP's Cloud Interconnect delivers predictable cross-region latencies averaging 15% lower than AWS across transatlantic routes, but AWS Transit Gateway provides superior routing policy control for complex hybrid multi-account topologies."
+    },
+    {
+      "id": "EXT-13",
+      "title": "Enterprise Cloud TCO: AWS vs Microsoft Azure 3-Year Infrastructure Economics",
+      "url": "https://cloud-economics.net/aws-vs-azure-tco-2024",
+      "author": "Elena Rostova",
+      "publication": "Enterprise Cloud Strategies",
+      "date": "2024-10-12",
+      "reliability_score": 0.94,
+      "snippet": "A comprehensive 3-year TCO analysis comparing AWS (EC2 m6i.xlarge, EBS gp3) and Microsoft Azure (D4s v5, Premium SSD v2) reveals close cost parity for raw compute, with Azure holding a 4-8% total cost advantage for enterprise workloads leveraging Azure Hybrid Benefit and existing Microsoft 365 or Windows Server licensing. In pure Linux and open-source containerized microservices, AWS delivers 5-7% lower operational overhead due to mature Savings Plans and automated Compute Optimizer recommendations. Both providers demonstrate identical base internet data egress charges ($0.087-$0.09/GB), but Azure ExpressRoute cross-premises connectivity models provide lower baseline port costs for hybrid on-premises migrations."
+    },
+    {
+      "id": "EXT-14",
+      "title": "Cloud Architecture and Security Governance: AWS Well-Architected vs Azure Cloud Adoption Framework",
+      "url": "https://cloudarch-review.io/aws-vs-azure-architecture-governance",
+      "author": "Marcus Vance",
+      "publication": "Cloud Architecture Review",
+      "date": "2024-09-18",
+      "reliability_score": 0.92,
+      "snippet": "Architectural comparison between AWS and Azure demonstrates divergent philosophies for multi-tenant SaaS isolation. AWS favors multi-account topologies orchestrated via AWS Organizations, Control Tower, and IAM permission boundaries, providing hard hypervisor and billing isolation per tenant. Azure utilizes Management Groups, Subscriptions, and Azure Policy with Entra ID (Azure AD) Conditional Access for centralized identity governance. For enterprise compliance (FedRAMP High, HIPAA, SOC 2 Type II), AWS offers more granular IAM role chaining and KMS customer-managed keys, whereas Azure provides seamless identity federation for enterprises with existing Active Directory footprints."
     }
   ],
   "search_config": {

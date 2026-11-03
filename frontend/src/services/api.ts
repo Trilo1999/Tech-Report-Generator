@@ -120,10 +120,13 @@ export async function submitReview(threadId: string, review: ReviewSubmission): 
   return res.json();
 }
 
-export function getDownloadUrl(threadId: string): string {
+export function getDownloadUrl(threadId: string, format: "pdf" | "docx" = "pdf"): string {
   const token = getStoredToken();
-  const queryParam = token ? `?token=${encodeURIComponent(token)}` : "";
-  return `${BASE_URL}/api/research/download/${threadId}${queryParam}`;
+  const params = new URLSearchParams();
+  if (format) params.append("format", format);
+  if (token) params.append("token", token);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  return `${BASE_URL}/api/research/download/${threadId}${qs}`;
 }
 
 export async function listUserTasks(): Promise<ResearchTaskSummary[]> {

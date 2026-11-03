@@ -4,6 +4,7 @@ Manages connections, schema initialization, users, research tasks,
 and integrates with LangGraph PostgresSaver checkpointer.
 """
 
+import json
 import logging
 import time
 from typing import Any, Dict, List, Optional
@@ -95,7 +96,23 @@ def init_postgres_schema(demo_accounts: Optional[List[Dict[str, Any]]] = None) -
                     """
                 )
 
-                # 3. Seed demo accounts if empty
+                # 3. Persistent Cross-Session Research Memories Table
+                cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS research_memories (
+                        id VARCHAR(64) PRIMARY KEY,
+                        topic TEXT NOT NULL,
+                        summary TEXT NOT NULL,
+                        winner VARCHAR(255),
+                        key_findings JSONB NOT NULL DEFAULT '[]'::jsonb,
+                        created_at DOUBLE PRECISION NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_research_memories_topic ON research_memories(topic);
+                    CREATE INDEX IF NOT EXISTS idx_research_memories_created_at ON research_memories(created_at DESC);
+                    """
+                )
+
+                # 4. Seed demo accounts if empty
                 if demo_accounts:
                     cur.execute("SELECT COUNT(*) AS count FROM users")
                     row = cur.fetchone()
@@ -288,3 +305,58 @@ def pg_delete_task(thread_id: str, user_id: Optional[str] = None, is_admin: bool
     except Exception as exc:
         logger.error("pg_delete_task failed: %s", exc)
         return False
+
+
+# ──────────────────────────────────────────────
+# Cross-Session Memory Helpers (PostgreSQL)
+# ──────────────────────────────────────────────
+def pg_save_memory(memory_dict: Dict[str, Any]) -> bool:
+    """Save an approved research takeaway or benchmark summary into cross-session memory."""
+    try:
+        with get_postgres_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO research_memories (id, topic, summary, winner, key_findings, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (id) DO UPDATE SET
+                        topic = EXCLUDED.topic,
+                        summary = EXCLUDED.summary,
+                        winner = EXCLUDED.winner,
+                        key_findings = EXCLUDED.key_findings
+                    """,
+                    (
+                        memory_dict.get("id", str(uuid.uuid4())),
+                        memory_dict.get("topic", "Comparative Research"),
+                        memory_dict.get("summary", ""),
+                        memory_dict.get("winner", "Inconclusive"),
+                        json.dumps(memory_dict.get("key_findings", [])),
+                        memory_dict.get("created_at", time.time()),
+                    ),
+                )
+                conn.commit()
+        return True
+    except Exception as exc:
+        logger.error("pg_save_memory failed: %s", exc)
+        return False
+
+
+def pg_search_memories(topic_query: str, limit: int = 3) -> List[Dict[str, Any]]:
+    """Retrieve historical research memories relevant to a given topic."""
+    try:
+        with get_postgres_conn() as conn:
+            with conn.cursor() as cur:
+                # Simple case-insensitive keyword match across topic and summary
+                cur.execute(
+                    """
+                    SELECT * FROM research_memories
+                    WHERE topic ILIKE %s OR summary ILIKE %s
+                    ORDER BY created_at DESC
+                    LIMIT %s
+                    """,
+                    (f"%{topic_query.strip()}%", f"%{topic_query.strip()}%", limit),
+                )
+                return cur.fetchall()
+    except Exception as exc:
+        logger.error("pg_search_memories failed: %s", exc)
+        return []

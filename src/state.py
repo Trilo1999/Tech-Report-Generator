@@ -20,6 +20,14 @@ class HumanFeedback(TypedDict):
     target_sections: List[str]  # Specific sections to modify during revision
 
 
+class ConflictingEvidenceItem(TypedDict):
+    source_a_id: str
+    source_b_id: str
+    claim_a: str
+    claim_b: str
+    resolution_strategy: str
+
+
 class DraftReport(TypedDict):
     title: str
     sections: Dict[str, str]  # Section name -> Markdown content with citations
@@ -35,6 +43,7 @@ class ResearchState(TypedDict):
     iteration_count: int
     is_sufficient: bool
     missing_gaps: List[str]
+    conflicting_evidence: List[ConflictingEvidenceItem]
     draft_report: Optional[DraftReport]
     unsupported_claims: List[str]
     human_feedback: Optional[HumanFeedback]

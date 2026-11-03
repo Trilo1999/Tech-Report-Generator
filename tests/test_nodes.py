@@ -443,3 +443,185 @@ def test_export_report_node():
     assert pdf_path.suffix == ".pdf"
     assert pdf_path.stat().st_size > 500, "PDF file must not be empty"
     assert result["status"] == "completed"
+
+
+def test_evaluate_evidence_conflicting_and_missing_evidence():
+    """Verify evaluation detects missing gaps when dimensions lack coverage and isolates conflicting evidence."""
+    # 1. Test missing evidence detection
+    state_missing: ResearchState = {
+        "topic": "PostgreSQL vs MongoDB Multi-Tenant Scaling",
+        "subquestions": ["How do PostgreSQL and MongoDB perform under 200 concurrent connections?"],
+        "evidence": [
+            {
+                "source_id": "QDR-01",
+                "source_type": "internal_qdrant",
+                "title": "Guidelines",
+                "content": "Mandatory row-level security.",
+                "reliability_score": 0.95,
+                "metadata": {},
+            }
+        ],
+        "calculations": {},
+        "iteration_count": 0,
+        "is_sufficient": False,
+        "missing_gaps": [],
+        "conflicting_evidence": [],
+        "draft_report": None,
+        "unsupported_claims": [],
+        "human_feedback": None,
+        "final_report_path": None,
+        "status": "evaluating",
+    }
+
+    eval_missing = evaluate_evidence(state_missing)
+    assert eval_missing["is_sufficient"] is False, "Must declare insufficient when external/csv/cost are missing"
+    assert len(eval_missing["missing_gaps"]) > 0
+
+    # 2. Test conflicting evidence detection between external source and empirical benchmark
+    state_conflicting: ResearchState = {
+        "topic": "PostgreSQL vs MongoDB Multi-Tenant Scaling",
+        "subquestions": ["How do PostgreSQL and MongoDB perform under 200 concurrent connections?"],
+        "evidence": [
+            {
+                "source_id": "QDR-01",
+                "source_type": "internal_qdrant",
+                "title": "Guidelines",
+                "content": "Mandatory row-level security.",
+                "reliability_score": 0.95,
+                "metadata": {},
+            },
+            {
+                "source_id": "EXT-01",
+                "source_type": "external_mock",
+                "title": "Analyst Whitepaper",
+                "content": "Throughput parity observed across document and relational paradigms.",
+                "reliability_score": 0.85,
+                "metadata": {},
+            },
+            {
+                "source_id": "CSV-01",
+                "source_type": "tabular_csv",
+                "title": "Empirical Telemetry",
+                "content": "MongoDB write p95 latency degrades to 7.91ms vs PostgreSQL 3.82ms under 200 concurrent connections.",
+                "reliability_score": 0.99,
+                "metadata": {},
+            },
+            {
+                "source_id": "COST-01",
+                "source_type": "cost_calculation",
+                "title": "12-Month TCO Model",
+                "content": "PostgreSQL total annual cost is 15.04% cheaper.",
+                "reliability_score": 1.0,
+                "metadata": {},
+            },
+        ],
+        "calculations": {},
+        "iteration_count": 0,
+        "is_sufficient": False,
+        "missing_gaps": [],
+        "conflicting_evidence": [],
+        "draft_report": None,
+        "unsupported_claims": [],
+        "human_feedback": None,
+        "final_report_path": None,
+        "status": "evaluating",
+    }
+
+    eval_conflicts = evaluate_evidence(state_conflicting)
+    assert "conflicting_evidence" in eval_conflicts
+    conflicts = eval_conflicts["conflicting_evidence"]
+    assert len(conflicts) > 0, "Must detect contradiction between external whitepaper and empirical benchmark"
+    assert any(c["source_a_id"] == "EXT-01" and c["source_b_id"] == "CSV-01" for c in conflicts)
+
+
+def test_draft_report_reconciles_conflicting_evidence():
+    """Verify draft_report explicitly surfaces conflicting evidence and cites empirical resolution."""
+    state: ResearchState = {
+        "topic": "PostgreSQL vs MongoDB Multi-Tenant Scaling",
+        "subquestions": ["Subquestion 1", "Subquestion 2", "Subquestion 3"],
+        "evidence": [
+            {
+                "source_id": "QDR-01",
+                "source_type": "internal_qdrant",
+                "title": "Architecture",
+                "content": "PostgreSQL supports RLS.",
+                "reliability_score": 0.95,
+                "metadata": {},
+            },
+            {
+                "source_id": "EXT-01",
+                "source_type": "external_mock",
+                "title": "Whitepaper",
+                "content": "Claims throughput parity.",
+                "reliability_score": 0.85,
+                "metadata": {},
+            },
+            {
+                "source_id": "CSV-01",
+                "source_type": "tabular_csv",
+                "title": "Benchmarks",
+                "content": "MongoDB p95 write latency 7.91ms vs PostgreSQL 3.82ms.",
+                "reliability_score": 0.99,
+                "metadata": {},
+            },
+        ],
+        "calculations": {},
+        "iteration_count": 1,
+        "is_sufficient": True,
+        "missing_gaps": [],
+        "conflicting_evidence": [
+            {
+                "source_a_id": "EXT-01",
+                "source_b_id": "CSV-01",
+                "claim_a": "Whitepaper claims throughput parity across models.",
+                "claim_b": "Empirical stress test reveals 2x latency divergence on writes under 200 users.",
+                "resolution_strategy": "Empirical benchmark telemetry [CSV-01] supersedes general whitepaper projections [EXT-01].",
+            }
+        ],
+        "draft_report": None,
+        "unsupported_claims": [],
+        "human_feedback": None,
+        "final_report_path": None,
+        "status": "evaluating",
+    }
+
+    result = draft_report(state)
+    draft = result["draft_report"]
+    assert draft is not None
+    # Verify conflict reconciliation block is embedded into sections
+    all_text = " ".join(draft["sections"].values())
+    assert "Conflicting Evidence & Reconciliation" in all_text
+    assert "[EXT-01]" in all_text and "[CSV-01]" in all_text
+    assert "supersedes" in all_text or "Resolution" in all_text
+
+
+def test_all_ui_preset_topics_execute_and_have_data():
+    """Verify that all default preset scopes shown in the UI have full data and execute successfully."""
+    from src.tools.external_search import search_external_sources
+    from src.tools.internal_search import search_internal_documents
+
+    preset_topics = [
+        "python vs java Architecture Evaluation on llm integration",
+        "PostgreSQL vs MongoDB Architecture Evaluation",
+        "React vs Angular Enterprise Performance Benchmark",
+        "AWS vs Azure Cloud TCO & Infrastructure Evaluation",
+        "AWS vs GCP Cloud TCO & Microservices",
+    ]
+
+    for topic in preset_topics:
+        # 1. Calculations
+        calc_res = execute_calculations({"topic": topic})
+        calcs = calc_res.get("calculations", {})
+        assert "cost_projection" in calcs
+        assert "summary_stats" in calcs
+        cost_comparison = calcs["cost_projection"].get("comparison", {})
+        assert "cheaper_database" in cost_comparison
+        assert cost_comparison["projected_difference_amount"] > 0
+
+        # 2. Internal Search (Qdrant)
+        internal_results = search_internal_documents(topic, limit=2)
+        assert len(internal_results) > 0, f"No internal documents for topic: {topic}"
+
+        # 3. External Search
+        external_results = search_external_sources(topic, limit=2)
+        assert len(external_results) > 0, f"No external sources for topic: {topic}"
