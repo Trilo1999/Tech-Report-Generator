@@ -14,14 +14,29 @@ build/
 .env
 
 # Qdrant local storage
-data/qdrant_storage/
+app/data/qdrant_storage/
+app/data/cache/
+app/data/*.db*
+app/data/tasks_registry.json
+app/sqlite_data/
+sqlite_data/
 
-# FastEmbed cache
-data/cache/
+# Generated reports (keep directory, ignore outputs)
+app/reports/*.pdf
+app/reports/*.docx
 
-# Checkpoints & Auth DB
-data/*.db*
-data/tasks_registry.json
+# Runtime data and caches
+AI-Research-Report-Generation-Agent/
+agentic_web_starter/
+logs/
+*.log
+temp/
+app/static/*
+uploads/*
+
+# Docusaurus
+website/node_modules/
+website/build/
 
 # Node / Frontend
 node_modules/

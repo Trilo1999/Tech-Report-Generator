@@ -19,14 +19,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --default-timeout=100 -r requirements.txt
 
 # Copy source code and application assets
-COPY config/ ./config/
-COPY routes/ ./routes/
-COPY services/ ./services/
-COPY src/ ./src/
-COPY app.py .
-COPY data/sample_data/ ./data/sample_data/
-COPY scripts/ ./scripts/
-COPY tests/ ./tests/
+COPY app/ ./app/
+COPY pyproject.toml ./
 COPY pytest.ini .
 
 # Create directory for reports and local state
@@ -34,4 +28,4 @@ RUN mkdir -p /app/reports /app/data/qdrant_storage
 
 EXPOSE 8000
 
-CMD ["uvicorn", "src.server.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

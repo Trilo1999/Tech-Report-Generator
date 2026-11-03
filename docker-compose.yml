@@ -59,12 +59,7 @@ services:
       - QDRANT_URL=http://qdrant:6333
       - POSTGRES_URL=postgresql://postgres:postgrespassword@postgres:5432/research_agent
     volumes:
-      - ./data:/app/data
-      - ./reports:/app/reports
-      - ./src:/app/src
-      - ./config:/app/config
-      - ./routes:/app/routes
-      - ./services:/app/services
+      - ./app:/app/app
 
 
     depends_on:
@@ -72,20 +67,6 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-
-  # ────────────────────────────────────────────────────────────
-  # React + TypeScript Frontend (Served via Nginx on port 3000)
-  # ────────────────────────────────────────────────────────────
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: research_agent_frontend
-    restart: unless-stopped
-    ports:
-      - "3000:80"
-    depends_on:
-      - agent
 
 volumes:
 
