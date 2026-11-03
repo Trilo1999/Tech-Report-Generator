@@ -16,6 +16,48 @@
       "memory_gb": 32,
       "price_per_hour": 0.52,
       "description": "MongoDB Atlas — dedicated cluster tier"
+    },
+    "react": {
+      "instance_type": "Edge-SSR-Cluster",
+      "vcpus": 2,
+      "memory_gb": 8,
+      "price_per_hour": 0.22,
+      "description": "Edge CDN Serverless SSR Execution & Static Delivery"
+    },
+    "angular": {
+      "instance_type": "Node-SSR-Container",
+      "vcpus": 4,
+      "memory_gb": 16,
+      "price_per_hour": 0.38,
+      "description": "Enterprise Angular Universal SSR Container Node"
+    },
+    "python": {
+      "instance_type": "c6i.xlarge-ai",
+      "vcpus": 4,
+      "memory_gb": 16,
+      "price_per_hour": 0.34,
+      "description": "Optimized Compute for Async Python LLM Inference Service"
+    },
+    "java": {
+      "instance_type": "m6i.xlarge-jvm",
+      "vcpus": 4,
+      "memory_gb": 32,
+      "price_per_hour": 0.42,
+      "description": "Enterprise Spring Boot / JVM High-Concurrency Worker"
+    },
+    "aws": {
+      "instance_type": "m6i.xlarge",
+      "vcpus": 4,
+      "memory_gb": 16,
+      "price_per_hour": 0.48,
+      "description": "AWS EC2 Enterprise Microservice Instance"
+    },
+    "gcp": {
+      "instance_type": "n2-standard-4",
+      "vcpus": 4,
+      "memory_gb": 16,
+      "price_per_hour": 0.44,
+      "description": "Google Cloud Compute Engine with Sustained Use Discount"
     }
   },
   "storage": {
@@ -32,6 +74,48 @@
       "iops_included": 5000,
       "additional_iops_price": 0.008,
       "description": "MongoDB Atlas provisioned storage with document overhead"
+    },
+    "react": {
+      "type": "Edge Asset CDN",
+      "price_per_gb_month": 0.05,
+      "iops_included": 10000,
+      "additional_iops_price": 0.001,
+      "description": "Distributed Global Edge CDN Asset Cache"
+    },
+    "angular": {
+      "type": "Enterprise Build Volume",
+      "price_per_gb_month": 0.08,
+      "iops_included": 5000,
+      "additional_iops_price": 0.003,
+      "description": "Persistent SSR Build Cache and Artifact Volume"
+    },
+    "python": {
+      "type": "Fast NVMe Cache",
+      "price_per_gb_month": 0.10,
+      "iops_included": 5000,
+      "additional_iops_price": 0.004,
+      "description": "Model Weights and Embedding Vector In-Memory Cache"
+    },
+    "java": {
+      "type": "gp3 SSD Storage",
+      "price_per_gb_month": 0.12,
+      "iops_included": 4000,
+      "additional_iops_price": 0.004,
+      "description": "JVM Heap Dump and Transaction Log Volume"
+    },
+    "aws": {
+      "type": "gp3 EBS SSD",
+      "price_per_gb_month": 0.10,
+      "iops_included": 3000,
+      "additional_iops_price": 0.005,
+      "description": "AWS Elastic Block Store General Purpose SSD"
+    },
+    "gcp": {
+      "type": "PD-SSD Persistent Disk",
+      "price_per_gb_month": 0.11,
+      "iops_included": 3500,
+      "additional_iops_price": 0.004,
+      "description": "Google Cloud Balanced Persistent Disk"
     }
   },
   "backup": {
@@ -44,6 +128,36 @@
       "price_per_gb_month": 0.025,
       "retention_days": 7,
       "description": "Cloud backup with point-in-time restore"
+    },
+    "react": {
+      "price_per_gb_month": 0.010,
+      "retention_days": 30,
+      "description": "Immutable preview deployment rollbacks"
+    },
+    "angular": {
+      "price_per_gb_month": 0.015,
+      "retention_days": 30,
+      "description": "Universal container snapshot archives"
+    },
+    "python": {
+      "price_per_gb_month": 0.020,
+      "retention_days": 14,
+      "description": "LangGraph state checkpoint snapshots"
+    },
+    "java": {
+      "price_per_gb_month": 0.022,
+      "retention_days": 14,
+      "description": "JVM state persistence and replication backup"
+    },
+    "aws": {
+      "price_per_gb_month": 0.021,
+      "retention_days": 14,
+      "description": "AWS Backup unified snapshot policy"
+    },
+    "gcp": {
+      "price_per_gb_month": 0.020,
+      "retention_days": 14,
+      "description": "Google Cloud Storage Nearline snapshot archive"
     }
   },
   "data_transfer": {
@@ -58,9 +172,53 @@
       "description": "AWS Business Support for production workloads"
     },
     "mongodb": {
-      "plan": "Premium",
+      "plan": "Production",
       "monthly_base": 150.00,
-      "description": "MongoDB Atlas Premium Support"
+      "description": "MongoDB Atlas production support"
+    },
+    "react": {
+      "plan": "Standard",
+      "monthly_base": 50.00,
+      "description": "CDN Enterprise Platform Support"
+    },
+    "angular": {
+      "plan": "Enterprise",
+      "monthly_base": 85.00,
+      "description": "Enterprise Framework & Node Support"
+    },
+    "python": {
+      "plan": "Developer",
+      "monthly_base": 75.00,
+      "description": "Enterprise AI Orchestration Support"
+    },
+    "java": {
+      "plan": "Enterprise",
+      "monthly_base": 110.00,
+      "description": "Red Hat / Oracle JVM Enterprise Support"
+    },
+    "aws": {
+      "plan": "Business",
+      "monthly_base": 100.00,
+      "description": "AWS 24/7 Business Technical Support"
+    },
+    "gcp": {
+      "plan": "Enhanced",
+      "monthly_base": 90.00,
+      "description": "Google Cloud Enhanced Support Tier"
+    }
+  },
+  "framework_licensing": {
+    "react": {
+      "license_type": "MIT Open Source",
+      "price_per_month": 0.0,
+      "annual_license_cost": 0.0,
+      "description": "100% Free Open-Source Framework (MIT License). Zero software licensing fees."
+    },
+    "angular": {
+      "license_type": "MIT Open Source",
+      "price_per_month": 0.0,
+      "annual_license_cost": 0.0,
+      "description": "100% Free Open-Source Framework (MIT License). Zero software licensing fees."
     }
   }
 }

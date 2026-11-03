@@ -21,6 +21,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 SAMPLE_DATA_DIR = DATA_DIR / "sample_data"
 QDRANT_STORAGE_DIR = DATA_DIR / "qdrant_storage"
 CHECKPOINT_DB_PATH = DATA_DIR / "checkpoints.db"
+AUTH_DB_PATH = DATA_DIR / "users.db"
 FASTEMBED_CACHE_DIR = DATA_DIR / "cache"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 
@@ -88,6 +89,13 @@ LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.2"))
 MAX_RESEARCH_ITERATIONS = 2  # Max re-search loops before forcing draft
 MIN_SUBQUESTIONS = 3  # Minimum subquestions the planner must generate
 TOP_K_SEARCH_RESULTS = 5  # Number of Qdrant results per query
+
+# ──────────────────────────────────────────────
+# Authentication & RBAC Configuration
+# ──────────────────────────────────────────────
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "antigravity-research-agent-insecure-secret-key-2026")
+JWT_ALGORITHM = "HS256"
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 
 # ──────────────────────────────────────────────
 # Server Configuration
