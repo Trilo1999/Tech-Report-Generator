@@ -186,7 +186,7 @@ def decode_access_token(token: str) -> Dict[str, Any]:
 
 
 # ──────────────────────────────────────────────
-# SQLite Persistence & Seeding
+# In-Memory & PostgreSQL Persistence & Seeding
 # ──────────────────────────────────────────────
 DEMO_ACCOUNTS = [
     {
@@ -219,9 +219,29 @@ DEMO_ACCOUNTS = [
     },
 ]
 
+_IN_MEMORY_USERS: Dict[str, Dict[str, Any]] = {}
+
+
+def _seed_in_memory_users() -> None:
+    for demo in DEMO_ACCOUNTS:
+        email = demo["email"].strip().lower()
+        if email not in _IN_MEMORY_USERS:
+            _IN_MEMORY_USERS[email] = {
+                "id": str(uuid.uuid5(uuid.NAMESPACE_DNS, email)),
+                "email": email,
+                "name": demo["name"],
+                "role": demo["role"],
+                "password_hash": hash_password(demo["password"]),
+                "created_at": 1704067200.0,
+            }
+
+
+_seed_in_memory_users()
+
 
 def init_auth_db() -> None:
     """Initialize PostgreSQL users schema and seed demo accounts."""
+    _seed_in_memory_users()
     if is_postgres_available():
         demo_accounts_prepared = [
             {
@@ -236,26 +256,33 @@ def init_auth_db() -> None:
 
 
 def get_user_by_email(email: str) -> Optional[UserInDB]:
-    """Retrieve user by email directly from PostgreSQL."""
+    """Retrieve user by email directly from PostgreSQL, with in-memory fallback."""
     clean_email = email.strip().lower()
-    pg_user = pg_get_user_by_email(clean_email)
-    if pg_user:
-        return UserInDB(**pg_user)
+    if is_postgres_available():
+        pg_user = pg_get_user_by_email(clean_email)
+        if pg_user:
+            return UserInDB(**pg_user)
+    if clean_email in _IN_MEMORY_USERS:
+        return UserInDB(**_IN_MEMORY_USERS[clean_email])
     return None
 
 
 def get_user_by_id(user_id: str) -> Optional[UserInDB]:
-    """Retrieve user by user id directly from PostgreSQL."""
-    pg_user = pg_get_user_by_id(user_id)
-    if pg_user:
-        return UserInDB(**pg_user)
+    """Retrieve user by user id directly from PostgreSQL, with in-memory fallback."""
+    if is_postgres_available():
+        pg_user = pg_get_user_by_id(user_id)
+        if pg_user:
+            return UserInDB(**pg_user)
+    for u in _IN_MEMORY_USERS.values():
+        if u["id"] == user_id:
+            return UserInDB(**u)
     return None
 
 
 def create_user(
     email: str, name: str, password: str, role: RoleType = "researcher"
 ) -> User:
-    """Create and persist a new user exclusively in PostgreSQL."""
+    """Create and persist a new user in PostgreSQL (or in-memory when unavailable)."""
     clean_email = email.strip().lower()
     clean_name = name.strip()
 
@@ -279,14 +306,17 @@ def create_user(
         "created_at": now,
     }
 
-    try:
-        success = pg_create_user(user_dict)
-        if not success:
-            raise HTTPException(
-                status_code=500, detail="Failed to persist user in PostgreSQL."
-            )
-    except ValueError as val_err:
-        raise HTTPException(status_code=400, detail=str(val_err)) from val_err
+    if is_postgres_available():
+        try:
+            success = pg_create_user(user_dict)
+            if not success:
+                raise HTTPException(
+                    status_code=500, detail="Failed to persist user in PostgreSQL."
+                )
+        except ValueError as val_err:
+            raise HTTPException(status_code=400, detail=str(val_err)) from val_err
+
+    _IN_MEMORY_USERS[clean_email] = user_dict
 
     return User(
         id=user_id, email=clean_email, name=clean_name, role=role, created_at=now

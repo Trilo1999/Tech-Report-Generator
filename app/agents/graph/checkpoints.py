@@ -14,7 +14,8 @@ from langgraph.types import Command
 from psycopg_pool import ConnectionPool
 
 from app.agents.graph.builder import create_research_graph
-from app.config.env_config import POSTGRES_URL
+from app.config.env_config import CHECKPOINT_DB_PATH, POSTGRES_URL
+from app.repository.sql_repository.postgres import is_postgres_available
 
 logger = logging.getLogger("research_agent.checkpoints")
 
@@ -48,24 +49,30 @@ def get_checkpointer(db_path: Optional[str | Path] = None) -> BaseCheckpointSave
         conn = sqlite3.connect(str(db_path), check_same_thread=False)
         return SqliteSaver(conn)
 
-    # Production checkpointer: PostgreSQL
-    if _GLOBAL_PG_CHECKPOINTER is None:
-        from langgraph.checkpoint.postgres import PostgresSaver
+    # Production checkpointer: PostgreSQL when reachable
+    if is_postgres_available():
+        if _GLOBAL_PG_CHECKPOINTER is None:
+            from langgraph.checkpoint.postgres import PostgresSaver
 
-        _GLOBAL_PG_POOL = ConnectionPool(
-            conninfo=POSTGRES_URL,
-            max_size=10,
-            open=True,
-            kwargs={"autocommit": True},
-        )
-        cp = PostgresSaver(_GLOBAL_PG_POOL)
-        cp.setup()
-        _GLOBAL_PG_CHECKPOINTER = cp
-        logger.info(
-            "LangGraph checkpointer initialized with PostgreSQL on %s", POSTGRES_URL
-        )
+            _GLOBAL_PG_POOL = ConnectionPool(
+                conninfo=POSTGRES_URL,
+                max_size=10,
+                open=True,
+                kwargs={"autocommit": True},
+            )
+            cp = PostgresSaver(_GLOBAL_PG_POOL)
+            cp.setup()
+            _GLOBAL_PG_CHECKPOINTER = cp
+            logger.info(
+                "LangGraph checkpointer initialized with PostgreSQL on %s", POSTGRES_URL
+            )
 
-    return _GLOBAL_PG_CHECKPOINTER
+        return _GLOBAL_PG_CHECKPOINTER
+
+    # Fallback to local SQLite when PostgreSQL is not running
+    CHECKPOINT_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(CHECKPOINT_DB_PATH), check_same_thread=False)
+    return SqliteSaver(conn)
 
 
 def get_thread_state(

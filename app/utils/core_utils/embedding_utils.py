@@ -14,6 +14,25 @@ except ImportError:
         HuggingFaceEmbeddings = None
 
 
+def _build_fastembed_wrapper(model_name: str) -> Any:
+    """Build a fastembed-based fallback embedding instance."""
+    from fastembed import TextEmbedding
+
+    class _FastEmbedWrapper:
+        def __init__(self, name: str):
+            self.model = TextEmbedding(
+                model_name="sentence-transformers/all-MiniLM-L6-v2"
+            )
+
+        def embed_documents(self, texts: list[str]) -> list[list[float]]:
+            return [e.tolist() for e in self.model.embed(texts)]
+
+        def embed_query(self, text: str) -> list[float]:
+            return list(self.model.embed([text]))[0].tolist()
+
+    return _FastEmbedWrapper(model_name)
+
+
 class EmbeddingClient:
     """Factory for embeddings clients."""
 
@@ -33,22 +52,15 @@ class EmbeddingClient:
         Returns:
             Embeddings instance configured for the model.
         """
-        if HuggingFaceEmbeddings is None:
-            from fastembed import TextEmbedding
+        try:
+            import sentence_transformers  # noqa: F401
 
-            class _FastEmbedWrapper:
-                def __init__(self, model_name: str):
-                    self.model = TextEmbedding(
-                        model_name="sentence-transformers/all-MiniLM-L6-v2"
-                    )
+            has_sentence_transformers = True
+        except ImportError:
+            has_sentence_transformers = False
 
-                def embed_documents(self, texts: list[str]) -> list[list[float]]:
-                    return [e.tolist() for e in self.model.embed(texts)]
-
-                def embed_query(self, text: str) -> list[float]:
-                    return list(self.model.embed([text]))[0].tolist()
-
-            return _FastEmbedWrapper(self.embedding_model_name)
+        if not has_sentence_transformers or HuggingFaceEmbeddings is None:
+            return _build_fastembed_wrapper(self.embedding_model_name)
 
         encode_kwargs = {"normalize_embeddings": True}
 
@@ -62,15 +74,35 @@ class EmbeddingClient:
                 model_name=self.embedding_model_name,
                 encode_kwargs=encode_kwargs,
             )
-        except Exception:
-            try:
-                model = HuggingFaceEmbeddings(
-                    model_name="sentence-transformers/all-MiniLM-L6-v2"
-                )
-            except Exception:
-                model = HuggingFaceEmbeddings()
-        logger.info("Embedding model loaded.")
-        return model
+            logger.info("Embedding model loaded.")
+            return model
+        except Exception as exc:
+            logger.warning(
+                "Could not load HuggingFaceEmbeddings (%s); falling back to FastEmbed.",
+                exc,
+            )
+            return _build_fastembed_wrapper(self.embedding_model_name)
 
 
-embeddings_client = EmbeddingClient().create_embeddings()
+class _LazyEmbeddingClient:
+    """Lazy proxy so embedding model is not loaded at module import time."""
+
+    def __init__(self) -> None:
+        self._client: Any = None
+
+    def _get_client(self) -> Any:
+        if self._client is None:
+            self._client = EmbeddingClient().create_embeddings()
+        return self._client
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self._get_client().embed_documents(texts)
+
+    def embed_query(self, text: str) -> list[float]:
+        return self._get_client().embed_query(text)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._get_client(), name)
+
+
+embeddings_client = _LazyEmbeddingClient()

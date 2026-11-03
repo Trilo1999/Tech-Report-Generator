@@ -3,7 +3,11 @@ from typing import Optional, Sequence
 try:
     from langchain.agents import AgentExecutor, create_tool_calling_agent
 except ImportError:
-    from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
+    try:
+        from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
+    except ImportError:
+        AgentExecutor = None
+        create_tool_calling_agent = None
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.tools import BaseTool
