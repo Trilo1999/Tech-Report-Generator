@@ -184,7 +184,9 @@ class ResearchState(TypedDict):
 * **Deterministic Cost Engine (`calculate_cost`)**:
   * Ingests `data/sample_data/cloud_pricing.json`.
   * Computes monthly and multi-year TCO formulas:
-    $$\text{Monthly Cost} = (\text{Price}_{\text{compute}} \times \text{Hours}) + (\text{Price}_{\text{storage}} \times \text{GB}) + (\text{Backup}) + (\text{Support})$$
+    ```text
+    Monthly Cost = (Price_compute × Hours) + (Price_storage × GB) + Backup + Support
+    ```
   * Allows parameterized comparison (e.g., 1-year vs. 3-year TCO at 500GB scale).
 
 ### 4.3 Human-in-the-Loop & Persistence Subsystem
