@@ -111,3 +111,17 @@ GCP,read,7.6,7750,50,500
 GCP,read,11.9,6800,100,500
 GCP,write,9.9,6600,50,500
 GCP,write,14.5,5850,100,500
+Azure,read,8.8,7050,50,100
+Azure,read,8.4,7250,50,100
+Azure,read,12.4,6350,100,100
+Azure,read,11.8,6550,100,100
+Azure,read,18.1,5250,200,100
+Azure,write,10.6,6100,50,100
+Azure,write,10.1,6300,50,100
+Azure,write,14.9,5450,100,100
+Azure,write,14.2,5650,100,100
+Azure,write,20.9,4650,200,100
+Azure,read,8.6,7150,50,500
+Azure,read,13.1,6250,100,500
+Azure,write,11.1,6050,50,500
+Azure,write,15.8,5300,100,500

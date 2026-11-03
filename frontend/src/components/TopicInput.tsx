@@ -13,7 +13,8 @@ const PRESET_TOPICS = [
   { label: "🐍 Python vs ☕ Java (LLM Integration)", value: "python vs java Architecture Evaluation on llm integration" },
   { label: "🐘 Postgres vs 🍃 MongoDB", value: "PostgreSQL vs MongoDB Architecture Evaluation" },
   { label: "⚛️ React vs 🅰️ Angular", value: "React vs Angular Enterprise Performance Benchmark" },
-  { label: "☁️ AWS vs GCP TCO", value: "AWS vs GCP Cloud TCO & Microservices" },
+  { label: "☁️ AWS vs 🔷 Azure TCO", value: "AWS vs Azure Cloud TCO & Infrastructure Evaluation" },
+  { label: "☁️ AWS vs 🌐 GCP TCO", value: "AWS vs GCP Cloud TCO & Microservices" },
 ];
 
 export const TopicInput: React.FC<TopicInputProps> = ({
@@ -70,7 +71,7 @@ export const TopicInput: React.FC<TopicInputProps> = ({
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="e.g. React vs Angular architecture, PostgreSQL vs MongoDB..."
+            placeholder="e.g. React vs Angular architecture, PostgreSQL vs MongoDB, AWS vs Azure TCO..."
             disabled={isLoading || (!!user && !canStartResearch)}
           />
         </div>

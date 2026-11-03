@@ -89,6 +89,12 @@ def test_api_research_workflow_lifecycle():
     assert dl_res.headers["content-type"] == "application/pdf"
     assert len(dl_res.content) > 500
 
+    # 6. Download generated Word document (.docx)
+    dl_docx_res = client.get(f"/api/research/download/{thread_id}?format=docx", headers=viewer_headers)
+    assert dl_docx_res.status_code == 200
+    assert "wordprocessingml" in dl_docx_res.headers["content-type"]
+    assert len(dl_docx_res.content) > 500
+
 
 def test_api_research_not_found():
     """Verify 404 response for non-existent thread."""

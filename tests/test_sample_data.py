@@ -42,8 +42,8 @@ def test_benchmark_results_csv_validity():
 
     # Check database coverage
     databases = set(df["database"].unique())
-    assert "PostgreSQL" in databases
-    assert "MongoDB" in databases
+    required_entities = {"PostgreSQL", "MongoDB", "React", "Angular", "Python", "Java", "AWS", "GCP", "Azure"}
+    assert required_entities.issubset(databases), f"Missing entities: {required_entities - databases}"
 
     # Validate numeric realism
     assert (df["latency_ms"] > 0).all()
@@ -60,12 +60,15 @@ def test_cloud_pricing_json_validity():
     for key in ["compute", "storage", "backup", "support"]:
         assert key in pricing
 
-    # Verify both databases are represented in compute and storage
-    for db in ["postgresql", "mongodb"]:
-        assert db in pricing["compute"]
-        assert pricing["compute"][db]["price_per_hour"] > 0
-        assert db in pricing["storage"]
-        assert pricing["storage"][db]["price_per_gb_month"] > 0
+    # Verify all 9 preset tech options are represented in compute, storage, backup, support
+    all_techs = ["postgresql", "mongodb", "react", "angular", "python", "java", "aws", "gcp", "azure"]
+    for tech in all_techs:
+        assert tech in pricing["compute"], f"Missing compute pricing for {tech}"
+        assert pricing["compute"][tech]["price_per_hour"] > 0
+        assert tech in pricing["storage"], f"Missing storage pricing for {tech}"
+        assert pricing["storage"][tech]["price_per_gb_month"] > 0
+        assert tech in pricing["backup"], f"Missing backup pricing for {tech}"
+        assert tech in pricing["support"], f"Missing support pricing for {tech}"
 
 
 def test_research_sources_json_validity():

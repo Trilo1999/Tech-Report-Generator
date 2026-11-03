@@ -41,6 +41,7 @@ Evaluation Criteria:
 - Are all subquestions answered with factual, verifiable data?
 - Do we have architectural data, benchmark metrics, and cost projections?
 - If critical evidence is missing, what specific gaps remain?
+- Are there conflicting or contradictory claims between sources (e.g. benchmark numbers vs analyst claims)?
 
 Return your response strictly as a JSON object with this exact schema:
 {{
@@ -48,9 +49,19 @@ Return your response strictly as a JSON object with this exact schema:
   "missing_gaps": [
     "Specific missing item 1",
     "Specific missing item 2"
+  ],
+  "conflicting_evidence": [
+    {{
+      "source_a_id": "EXT-01",
+      "source_b_id": "CSV-01",
+      "claim_a": "Summary of claim in first source",
+      "claim_b": "Summary of contradictory claim in second source",
+      "resolution_strategy": "Resolution explanation prioritizing empirical telemetry over marketing claims"
+    }}
   ]
 }}
 If is_sufficient is true, missing_gaps must be an empty list [].
+If no conflicts exist, conflicting_evidence must be an empty list [].
 Do NOT include markdown formatting or commentary outside the JSON object.
 """
 

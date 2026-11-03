@@ -2,35 +2,42 @@ import React, { useEffect, useRef, useState } from "react";
 import { Navbar } from "./components/Navbar";
 import { Hero } from "./components/Hero";
 import { TopicInput } from "./components/TopicInput";
-import { WorkflowStepper } from "./components/WorkflowStepper";
-import { MetricsGrid } from "./components/MetricsGrid";
-import { CitationLegend } from "./components/CitationLegend";
-import { UnsupportedClaims } from "./components/UnsupportedClaims";
-import { ReportViewer } from "./components/ReportViewer";
-import { ReviewStation } from "./components/ReviewStation";
+import { ResearchTracker } from "./components/ResearchTracker";
+import { ResearchDetailsPage } from "./pages/ResearchDetailsPage";
 import { Toast } from "./components/Toast";
 import { AuthModal } from "./components/AuthModal";
 import { ProfileModal } from "./components/ProfileModal";
-import { ResearchTracker } from "./components/ResearchTracker";
-import { ResearchWorkflowState, ReviewSubmission } from "./types/research";
-import { getResearchStatus, startResearch, submitReview } from "./services/api";
+import { startResearch } from "./services/api";
 import { useAuth } from "./context/AuthContext";
+
+function getInitialRoute(): { view: "home" | "details"; threadId: string | null } {
+  const path = window.location.pathname;
+  if (path.startsWith("/research/")) {
+    const id = path.replace("/research/", "").trim();
+    if (id) return { view: "details", threadId: id };
+  }
+  const hash = window.location.hash;
+  if (hash.startsWith("#/research/") || hash.startsWith("#research/")) {
+    const id = hash.replace(/^#\/?research\//, "").trim();
+    if (id) return { view: "details", threadId: id };
+  }
+  return { view: "home", threadId: null };
+}
 
 export const App: React.FC = () => {
   const { user } = useAuth();
   const [topic, setTopic] = useState("python vs java Architecture Evaluation on llm integration");
-  const [workflowState, setWorkflowState] = useState<ResearchWorkflowState | null>(null);
+  const [view, setView] = useState<"home" | "details">(() => getInitialRoute().view);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(() => getInitialRoute().threadId);
+
   const [isLaunching, setIsLaunching] = useState(false);
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<"login" | "register">("login");
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [refreshTrackerTrigger, setRefreshTrackerTrigger] = useState(0);
 
   const trackerRef = useRef<HTMLDivElement | null>(null);
-  const pollIntervalRef = useRef<number | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -43,115 +50,41 @@ export const App: React.FC = () => {
   };
 
   const scrollToTracker = () => {
-    trackerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (view !== "home") {
+      navigateToHome();
+      setTimeout(() => {
+        trackerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } else {
+      trackerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
-  // Restore persistent active research on load or user switch
+  // Browser Navigation / Popstate Listener
   useEffect(() => {
-    if (!user) {
-      setWorkflowState(null);
-      return;
-    }
-    const savedThreadId = localStorage.getItem("active_research_thread_id");
-    if (savedThreadId && !workflowState) {
-      getResearchStatus(savedThreadId)
-        .then((state) => {
-          setWorkflowState(state);
-          if (state.topic) setTopic(state.topic);
-        })
-        .catch(() => {
-          localStorage.removeItem("active_research_thread_id");
-        });
-    }
-  }, [user]);
-
-  // Status Polling Effect
-  useEffect(() => {
-    const isRunning =
-      workflowState?.is_running ||
-      workflowState?.status === "running" ||
-      workflowState?.status === "processing" ||
-      workflowState?.status === "review_resuming";
-
-    if (!isRunning || !workflowState?.thread_id) {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-      setElapsedSeconds(0);
-      return;
-    }
-
-    // Timer for elapsed seconds
-    const timerInterval = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
-
-    // Poller every 1.5 seconds
-    const threadId = workflowState.thread_id;
-    let consecutiveErrors = 0;
-    const poller = setInterval(async () => {
-      try {
-        const updated = await getResearchStatus(threadId);
-        consecutiveErrors = 0;
-        setWorkflowState(updated);
-
-        // Check if finished running or failed
-        if (!updated.is_running && updated.status !== "running" && updated.status !== "processing" && updated.status !== "review_resuming") {
-          clearInterval(poller);
-          clearInterval(timerInterval);
-          setIsSubmittingReview(false);
-          setRefreshTrackerTrigger((prev) => prev + 1);
-
-          if (updated.status === "failed") {
-            showToast(`Workflow task failed: ${updated.error || "Unknown error"}`);
-          } else if (updated.is_pending_review) {
-            showToast("Draft report ready! Paused at Human Review checkpoint.");
-          } else if (updated.status === "completed") {
-            showToast("Publication PDF report generated successfully!");
-          }
-        }
-      } catch (err: any) {
-        consecutiveErrors += 1;
-        console.warn(`Polling status failed (${consecutiveErrors}/4):`, err);
-        if (consecutiveErrors >= 4) {
-          clearInterval(poller);
-          clearInterval(timerInterval);
-          showToast("Server temporarily unavailable. Polling paused.");
-        }
-      }
-    }, 1500);
-
-    pollIntervalRef.current = poller;
-
-    return () => {
-      clearInterval(poller);
-      clearInterval(timerInterval);
+    const handlePopState = () => {
+      const route = getInitialRoute();
+      setView(route.view);
+      setSelectedThreadId(route.threadId);
     };
-  }, [workflowState?.is_running, workflowState?.status, workflowState?.thread_id]);
 
-  const handleManualRefresh = async () => {
-    if (!workflowState?.thread_id) return;
-    try {
-      const updated = await getResearchStatus(workflowState.thread_id);
-      setWorkflowState(updated);
-      setRefreshTrackerTrigger((prev) => prev + 1);
-      showToast("Status updated from server.");
-    } catch (err: any) {
-      showToast(`Refresh failed: ${err.message || err}`);
-    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const navigateToDetails = (threadId: string) => {
+    setSelectedThreadId(threadId);
+    setView("details");
+    localStorage.setItem("active_research_thread_id", threadId);
+    window.history.pushState({ view: "details", threadId }, "", `/research/${threadId}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleSelectTask = async (threadId: string) => {
-    try {
-      const state = await getResearchStatus(threadId);
-      setWorkflowState(state);
-      if (state.topic) setTopic(state.topic);
-      localStorage.setItem("active_research_thread_id", threadId);
-      showToast(`Tracking research '${threadId}'`);
-    } catch (err: any) {
-      showToast(`Failed to load research: ${err.message || err}`);
-    }
+  const navigateToHome = () => {
+    setSelectedThreadId(null);
+    setView("home");
+    window.history.pushState({ view: "home" }, "", "/");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleLaunchResearch = async (overrideTopic?: string) => {
@@ -165,12 +98,11 @@ export const App: React.FC = () => {
 
     setIsLaunching(true);
     try {
-      // Dispatches asynchronous background task
       const initialTaskState = await startResearch(targetTopic);
-      setWorkflowState(initialTaskState);
-      localStorage.setItem("active_research_thread_id", initialTaskState.thread_id);
       setRefreshTrackerTrigger((prev) => prev + 1);
-      showToast("Research task started in background! Live monitoring active.");
+      showToast("Research started! Opening research details...");
+      // Immediately navigate to the newly created research details page
+      navigateToDetails(initialTaskState.thread_id);
     } catch (err: any) {
       const msg = err.message || String(err);
       if (msg.includes("401") || msg.toLowerCase().includes("unauthorized") || msg.toLowerCase().includes("token")) {
@@ -184,152 +116,52 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleSubmitReview = async (review: ReviewSubmission) => {
-    if (!workflowState?.thread_id || isSubmittingReview) return;
-
-    if (!user) {
-      openAuth("login");
-      return;
-    }
-
-    setIsSubmittingReview(true);
-    try {
-      // Dispatches asynchronous review resumption in background
-      const updated = await submitReview(workflowState.thread_id, review);
-      setWorkflowState(updated);
-      setRefreshTrackerTrigger((prev) => prev + 1);
-      showToast(
-        review.decision === "approved"
-          ? "Approval dispatched! Generating publication PDF in background..."
-          : review.decision === "revise"
-          ? "Surgical revision requested in background..."
-          : "Proposal rejection dispatched."
-      );
-    } catch (err: any) {
-      const msg = err.message || String(err);
-      if (msg.includes("401")) {
-        showToast("Session expired. Please log in.");
-        openAuth("login");
-      } else {
-        alert(`Review submission failed: ${msg}`);
-      }
-      setIsSubmittingReview(false);
-    }
+  const handleSelectTask = (threadId: string) => {
+    navigateToDetails(threadId);
   };
-
-  const handleCopyReport = () => {
-    if (!workflowState?.draft_report) return;
-    const { title, sections } = workflowState.draft_report;
-    const text = `${title}\n\n` + Object.entries(sections).map(([k, v]) => `## ${k}\n${v}`).join("\n\n");
-    navigator.clipboard.writeText(text).then(() => {
-      showToast("Full report copied to clipboard!");
-    });
-  };
-
-  const isTaskRunning =
-    workflowState?.is_running ||
-    workflowState?.status === "running" ||
-    workflowState?.status === "processing" ||
-    workflowState?.status === "review_resuming";
 
   return (
     <div className="container">
       <Navbar
-        threadId={workflowState?.thread_id}
+        threadId={selectedThreadId || undefined}
         onOpenAuthModal={openAuth}
         onOpenProfileModal={() => setIsProfileModalOpen(true)}
         onShowToast={showToast}
         onScrollToTracker={scrollToTracker}
-      />
-      <Hero />
-
-      <TopicInput
-        topic={topic}
-        setTopic={setTopic}
-        onLaunch={handleLaunchResearch}
-        isLoading={isLaunching || isTaskRunning}
-        onOpenAuthModal={() => openAuth("login")}
+        onNavigateHome={navigateToHome}
       />
 
-      {/* Persistent Research Hub & Status Tracker */}
-      <div ref={trackerRef}>
-        <ResearchTracker
-          activeThreadId={workflowState?.thread_id}
-          onSelectTask={handleSelectTask}
-          onShowToast={showToast}
-          refreshTrigger={refreshTrackerTrigger}
-        />
-      </div>
+      {view === "home" ? (
+        <>
+          <Hero />
 
-      {/* Live Asynchronous Background Task Progress Banner */}
-      {isTaskRunning && workflowState && (
-        <div className="bg-task-banner">
-          <div className="bg-task-pulse-icon">
-            <div className="task-spinner-ring"></div>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-            </svg>
+          <TopicInput
+            topic={topic}
+            setTopic={setTopic}
+            onLaunch={handleLaunchResearch}
+            isLoading={isLaunching}
+            onOpenAuthModal={() => openAuth("login")}
+          />
+
+          {/* Persistent Research Hub & Status Tracker */}
+          <div ref={trackerRef}>
+            <ResearchTracker
+              activeThreadId={selectedThreadId || undefined}
+              onSelectTask={handleSelectTask}
+              onShowToast={showToast}
+              refreshTrigger={refreshTrackerTrigger}
+            />
           </div>
-          <div className="bg-task-content">
-            <div className="bg-task-header">
-              <span className="bg-task-title">
-                Autonomous Research Executing in Background
-              </span>
-              <span className="bg-task-timer">Elapsed: {elapsedSeconds}s (polling every 1.5s)</span>
-            </div>
-            <p className="bg-task-desc">
-              Task ID: <code>{workflowState.thread_id}</code> &bull;{" "}
-              {workflowState.message || "Agent is synthesizing evidence, executing latency benchmarks, and drafting report non-blockingly."}
-            </p>
-          </div>
-          <button
-            type="button"
-            className="btn-refresh-task"
-            onClick={handleManualRefresh}
-            title="Force immediate status poll"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-            </svg>
-            Check Status
-          </button>
-        </div>
-      )}
-
-      <WorkflowStepper state={workflowState} isLoading={isLaunching || isTaskRunning} />
-
-      {workflowState && <MetricsGrid state={workflowState} />}
-      {workflowState && (
-        <CitationLegend
-          evidenceList={workflowState.evidence}
-          onShowToast={showToast}
-        />
-      )}
-
-      {workflowState?.unsupported_claims && (
-        <UnsupportedClaims claims={workflowState.unsupported_claims} />
-      )}
-
-      {workflowState?.draft_report && (
-        <ReportViewer
-          draft={workflowState.draft_report}
-          threadId={workflowState.thread_id}
-          evidenceList={workflowState.evidence}
-          isCompleted={workflowState.status === "completed"}
-          onCopy={handleCopyReport}
-          onShowToast={showToast}
-        />
-      )}
-
-      {workflowState?.draft_report && (
-        <ReviewStation
-          sections={workflowState.draft_report.sections}
-          threadId={workflowState.thread_id}
-          isPendingReview={workflowState.is_pending_review}
-          isCompleted={workflowState.status === "completed"}
-          onSubmitReview={handleSubmitReview}
-          isSubmitting={isSubmittingReview || isTaskRunning}
-        />
+        </>
+      ) : (
+        selectedThreadId && (
+          <ResearchDetailsPage
+            threadId={selectedThreadId}
+            onBack={navigateToHome}
+            onShowToast={showToast}
+            onOpenAuthModal={openAuth}
+          />
+        )
       )}
 
       {/* Login & Sign Up Modal */}

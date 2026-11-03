@@ -41,22 +41,10 @@ export const ResearchTracker: React.FC<ResearchTrackerProps> = ({
     }
   };
 
-  // Initial fetch and on refreshTrigger or user change
+  // Initial fetch once on mount or when user changes
   useEffect(() => {
     fetchTasks();
   }, [user?.id, refreshTrigger]);
-
-  // Polling when any task is actively running
-  useEffect(() => {
-    const hasRunning = tasks.some((t) => t.is_running || t.status === "running" || t.status === "processing");
-    if (!hasRunning || !user) return;
-
-    const interval = setInterval(() => {
-      fetchTasks(true);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [tasks, user]);
 
   const handleDelete = async (threadId: string, e: React.MouseEvent) => {
     e.stopPropagation();

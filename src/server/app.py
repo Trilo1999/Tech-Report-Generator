@@ -356,11 +356,12 @@ async def submit_review(
 @app.get("/api/research/download/{thread_id}")
 async def download_report(
     thread_id: str,
+    format: str = "pdf",
     token: Optional[str] = None,
     auth_credentials: Optional[HTTPAuthorizationCredentials] = Security(bearer_scheme),
 ):
     """
-    Download the final exported PDF report for an approved research thread.
+    Download the final exported report in PDF or Microsoft Word (.docx) format.
     Accepts Bearer token header or ?token= query parameter.
     Accessible to all authenticated users ('admin', 'researcher', 'reviewer', 'viewer').
     """
@@ -396,6 +397,30 @@ async def download_report(
     report_path = Path(report_path_str)
     if not report_path.is_file():
         raise HTTPException(status_code=404, detail="Exported report file not found on disk.")
+
+    target_format = format.lower().strip()
+    if target_format in ("docx", "doc", "word"):
+        docx_path = report_path.with_suffix(".docx")
+        if not docx_path.is_file():
+            from src.tools.report_exporter import generate_report
+
+            values = snapshot["values"]
+            draft = values.get("draft_report") or {}
+            content = {
+                "title": draft.get("title", f"Report: {values.get('topic')}"),
+                "sections": draft.get("sections", {}),
+                "cited_sources": draft.get("cited_sources", []),
+                "evidence_items": values.get("evidence", []),
+                "unsupported_claims": values.get("unsupported_claims", []),
+                "metadata": {"topic": values.get("topic")},
+            }
+            docx_path = Path(generate_report(content, format="docx"))
+
+        return FileResponse(
+            path=str(docx_path),
+            filename=docx_path.name,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
 
     return FileResponse(
         path=str(report_path),
