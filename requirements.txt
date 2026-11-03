@@ -30,9 +30,15 @@ pandas>=2.2.0
 reportlab>=4.2.0
 python-docx>=1.1.0
 
-# --- Web Server ---
+# --- Web Server & IAM ---
 fastapi>=0.115.0
 uvicorn>=0.32.0
+gunicorn>=23.0.0
+PyJWT>=2.8.0
+passlib[argon2]>=1.7.4
+python-multipart>=0.0.9
+redis>=5.0.0
+langchain-qdrant>=0.1.3
 
 # --- Utilities ---
 python-dotenv>=1.0.0
