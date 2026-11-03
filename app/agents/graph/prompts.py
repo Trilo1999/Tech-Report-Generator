@@ -1,12 +1,15 @@
 """LLM prompt templates for the Research & Report Generation Agent."""
 
 PLAN_RESEARCH_PROMPT = """You are a Principal Software Architect and Lead Technical Researcher.
-Your task is to decompose a broad technical topic into at least 3 specific, actionable research subquestions.
+Your task is to decompose a user query, technology recommendation request, or broad technical topic into at least 3 specific, actionable research subquestions.
 
-The subquestions should cover diverse evaluation dimensions such as:
-1. Architecture, multi-tenant isolation, data integrity, and compliance guidelines.
-2. Empirical benchmark performance (throughput, latency percentiles, concurrency scaling).
-3. Total Cost of Ownership (TCO), cloud infrastructure, backup, and operational economics.
+The topic may be:
+1. A comparative evaluation across multiple technologies/frameworks (e.g. "PostgreSQL vs MongoDB", "FastAPI vs NestJS").
+2. An in-depth technical research investigation, technology suggestion, or architectural study (e.g. "Zero-Trust Security for Cloud APIs", "Best Framework for High-Throughput Real-time WebSockets", "Event-Driven Microservices").
+
+Decompose the topic along appropriate dimensions:
+- If comparing technologies: Architecture & feature matrix, empirical benchmark performance (latency, throughput, concurrency), ecosystem maturity, and total cost of ownership.
+- If conducting deep-dive research or technology suggestion (not a comparison): Recommended framework/technology stack, architectural mechanisms, best practices, performance characteristics, and implementation trade-offs.
 
 Topic:
 {topic}
@@ -66,7 +69,7 @@ Do NOT include markdown formatting or commentary outside the JSON object.
 """
 
 DRAFT_REPORT_PROMPT = """You are an Executive Technical Writer and Lead Enterprise Architect.
-Synthesize a comprehensive, rigorous, and layman-accessible technical evaluation report based exclusively on the provided evidence and calculations.
+Synthesize a comprehensive, rigorous, and layman-accessible technical evaluation or research report based on the provided evidence, calculations, and ecosystem findings.
 
 Topic:
 {topic}
@@ -83,16 +86,22 @@ Deterministic Calculations & Analysis:
 Report Requirements:
 1. Every factual assertion, performance number, cost figure, and architectural claim MUST include an inline citation in square brackets matching the exact source_id (e.g., [QDR-01], [EXT-02], [CSV-01], [COST-01]).
 2. Explain citations in plain, layman-friendly English when citing them (e.g. "[COST-01: 12-Month Cloud TCO Model] indicates...", "[CSV-01: Empirical Latency Benchmark] demonstrates...", "[EXT-02: Framework Scaling Telemetry] shows...").
-3. If any claim is made that cannot be substantiated by the provided evidence, you MUST explicitly flag it in the unsupported_claims list.
-4. The report must contain these standard sections in the sections dictionary:
-   - "Executive Summary": Strategic high-level overview, key findings, and upfront decision summary.
-   - "Architecture & Data Model Comparison": Detailed analysis of schemas, isolation, type safety, and ecosystem libraries.
+3. Knowledge Base Fallback & Technology Recommendation:
+   - If the topic was not in the internal knowledge base, clearly synthesize external research [EXT-xx] and suggest the optimal technology, framework, or architectural pattern for the use case.
+4. Adapt Analysis for Comparison vs. Deep-Dive Research:
+   - If the query is an evaluation of multiple options: provide a detailed side-by-side comparison across features, throughput/latency, and TCO with a clear decision matrix.
+   - If the query is a deep-dive research or architectural study (it is NOT always a comparison): provide a comprehensive technical research breakdown of the architecture, recommended libraries/frameworks, operational best practices, and implementation guidelines.
+5. If any claim is made that cannot be substantiated by the provided evidence, you MUST explicitly flag it in the unsupported_claims list.
+6. The report must contain these standard sections in the sections dictionary:
+   - "Executive Summary": Strategic high-level overview, key findings, recommended technology/framework, and upfront decision summary.
+   - "Architecture & Data Model Comparison": Detailed analysis of architecture, framework design, schemas, isolation, type safety, and ecosystem libraries.
    - "Performance & Benchmark Analysis": Empirical throughput, p50/p95/p99 latency, and concurrency scaling.
    - "TCO & Cloud Cost Projection": Monthly and multi-year hosting, compute tiers, and maintenance overhead.
    - "Final Verdict & Decision Matrix":
-     * Direct, unambiguous recommendation stating which option is best overall and why.
-     * Specific breakdown: Which is best for faster development and prototyping? Which is best for enterprise security?
-     * Plain-language summary and actionable next steps for non-technical stakeholders.
+     * Direct, unambiguous recommendation stating which technology/framework is best overall and why.
+     * When comparing alternatives: which is best for faster development/prototyping vs. enterprise security.
+     * When conducting deep-dive research: concrete architectural recommendations and actionable next steps.
+     * Plain-language summary for non-technical stakeholders.
 
 Return your response strictly as a JSON object with this exact schema:
 {{
