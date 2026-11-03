@@ -1,28 +1,16 @@
 """Research workflow execution and task lifecycle service implementing OOP patterns."""
 
 import asyncio
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List
 import uuid
 
 from fastapi import HTTPException
-from pydantic import BaseModel, Field
 
 from app.agents.graph.checkpoints import get_thread_state, resume_workflow
-from app.services.iam_services.research_auth import User
+from app.exceptions.domain import NotFoundError
+from app.schemas.core_schemas.research_schema import HumanReviewRequest, ResearchStartRequest
 from app.services.core_services.task_service import TaskManager, task_manager
-
-
-class ResearchStartRequest(BaseModel):
-    topic: str = Field(..., description="Broad technical research topic or decision scope")
-    thread_id: Optional[str] = Field(None, description="Optional custom thread ID for persistence")
-    sync: Optional[bool] = Field(False, description="Whether to block synchronously (useful for tests and automation)")
-
-
-class HumanReviewRequest(BaseModel):
-    decision: Literal["approved", "revise", "rejected"] = Field(..., description="Human review decision")
-    feedback_notes: Optional[str] = Field("", description="Reviewer feedback or revision instructions")
-    target_sections: Optional[List[str]] = Field(default_factory=list, description="Sections to surgically modify")
-    sync: Optional[bool] = Field(False, description="Whether to block synchronously until review cycle completes")
+from app.services.iam_services.research_auth import User
 
 
 class ResearchService:
@@ -41,7 +29,7 @@ class ResearchService:
         is_admin = current_user.role == "admin"
         deleted = self.manager.delete_task(thread_id=thread_id, user_id=current_user.id, is_admin=is_admin)
         if not deleted:
-            raise HTTPException(status_code=404, detail="Task not found or unauthorized to delete.")
+            raise NotFoundError("Task not found or unauthorized to delete.")
         return {"status": "deleted", "thread_id": thread_id}
 
     async def start_research(self, request: ResearchStartRequest, current_user: User) -> Dict[str, Any]:
@@ -105,7 +93,7 @@ class ResearchService:
                 self.manager.save_task(task)
 
         if not snapshot and not task:
-            raise HTTPException(status_code=404, detail=f"Research thread '{thread_id}' not found.")
+            raise NotFoundError(f"Research thread '{thread_id}' not found.")
 
         if not snapshot and task:
             return {
@@ -172,7 +160,7 @@ class ResearchService:
 
         snapshot = get_thread_state(thread_id)
         if not snapshot:
-            raise HTTPException(status_code=404, detail=f"Research thread '{thread_id}' not found.")
+            raise NotFoundError(f"Research thread '{thread_id}' not found.")
 
         if "human_review" not in snapshot.get("next", []):
             raise HTTPException(status_code=400, detail="Thread is not currently awaiting review.")

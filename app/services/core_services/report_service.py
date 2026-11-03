@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.security import HTTPAuthorizationCredentials
 
 from app.agents.graph.checkpoints import get_thread_state
+from app.exceptions.domain import NotFoundError
 from app.services.iam_services.research_auth import decode_access_token, get_user_by_id
 
 
@@ -46,7 +47,7 @@ class ReportService:
 
         snapshot = get_thread_state(thread_id)
         if not snapshot:
-            raise HTTPException(status_code=404, detail=f"Thread '{thread_id}' not found.")
+            raise NotFoundError(f"Thread '{thread_id}' not found.")
 
         report_path_str = snapshot["values"].get("final_report_path")
         if not report_path_str:
@@ -56,7 +57,7 @@ class ReportService:
 
         report_path = Path(report_path_str)
         if not report_path.is_file():
-            raise HTTPException(status_code=404, detail="Exported report file not found on disk.")
+            raise NotFoundError("Exported report file not found on disk.")
 
         target_format = format.lower().strip()
         if target_format in ("docx", "doc", "word"):

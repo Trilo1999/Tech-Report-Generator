@@ -9,11 +9,11 @@ into professional documents in the reports/ directory.
 from datetime import datetime
 from pathlib import Path
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from docx import Document
 from docx.shared import Pt, RGBColor
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import letter
@@ -552,3 +552,22 @@ def generate_report_tool(
 ) -> str:
     """Export structured research report into professional PDF or DOCX format with formatted citations and charts."""
     return generate_report(content=content, format=format, output_filename=output_filename)
+
+
+class ReportExporterTool(BaseTool):
+    """Tool that exports structured research reports into publication-ready PDF or Word formats."""
+
+    name: str = "generate_report"
+    description: str = (
+        "Export structured research report into professional PDF or DOCX format with formatted citations and charts."
+    )
+    args_schema: Type[BaseModel] = ReportExporterInput
+
+    def _run(
+        self,
+        content: Dict[str, Any],
+        format: str = "pdf",
+        output_filename: Optional[str] = None,
+    ) -> str:
+        """Execute report export to PDF or DOCX."""
+        return default_report_exporter.export(content=content, format=format, output_filename=output_filename)

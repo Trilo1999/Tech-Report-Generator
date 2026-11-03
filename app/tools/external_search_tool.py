@@ -9,9 +9,9 @@ import json
 import os
 from pathlib import Path
 import re
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Type
 
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 
 from app.config.env_config import RESEARCH_SOURCES_JSON
@@ -289,3 +289,23 @@ def search_external_sources_tool(
     Returns ranked citations tagged with [EXT-xx] identifiers.
     """
     return default_external_search_engine.search(query=query, min_reliability=min_reliability, limit=limit)
+
+
+class ExternalSearchTool(BaseTool):
+    """Tool that searches external analyst articles, benchmarks, and whitepapers."""
+
+    name: str = "search_external_sources"
+    description: str = (
+        "Search external analyst articles, benchmark publications, and cloud architecture whitepapers. "
+        "Returns ranked citations tagged with [EXT-xx] identifiers."
+    )
+    args_schema: Type[BaseModel] = ExternalSearchInput
+
+    def _run(
+        self,
+        query: str,
+        min_reliability: float = 0.5,
+        limit: int = 4,
+    ) -> List[Dict[str, Any]]:
+        """Execute external research search."""
+        return default_external_search_engine.search(query=query, min_reliability=min_reliability, limit=limit)

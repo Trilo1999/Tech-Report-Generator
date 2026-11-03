@@ -10,6 +10,7 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 
+from app.models.research_model import TaskModel
 from app.repository.sql_repository.postgres import (
     is_postgres_available,
     pg_delete_task,
@@ -21,8 +22,8 @@ from app.repository.sql_repository.postgres import (
 logger = logging.getLogger("research_agent.tasks")
 
 
-class TaskRecord:
-    """Tracking record for an asynchronous workflow task."""
+class TaskRecord(TaskModel):
+    """Tracking record for an asynchronous workflow task backed by domain TaskModel."""
 
     def __init__(
         self,
@@ -39,40 +40,31 @@ class TaskRecord:
         error: Optional[str] = None,
         created_at: Optional[float] = None,
         updated_at: Optional[float] = None,
+        **kwargs: Any,
     ):
         now = time.time()
-        self.task_id = task_id
-        self.thread_id = task_id
-        self.topic = topic
-        self.user_id = user_id
-        self.user_name = user_name
-        self.status = status
-        self.current_step = current_step
-        self.is_running = is_running
-        self.is_pending_review = is_pending_review
-        self.evidence_count = evidence_count
-        self.has_report = has_report
-        self.error = error
-        self.created_at = created_at if created_at is not None else now
-        self.updated_at = updated_at if updated_at is not None else now
+        c_at = created_at if created_at is not None else now
+        u_at = updated_at if updated_at is not None else now
+        super().__init__(
+            task_id=task_id,
+            thread_id=task_id,
+            topic=topic,
+            user_id=user_id,
+            user_name=user_name,
+            status=status,
+            current_step=current_step,
+            is_running=is_running,
+            is_pending_review=is_pending_review,
+            evidence_count=evidence_count,
+            has_report=has_report,
+            error=error,
+            created_at=c_at,
+            updated_at=u_at,
+            **kwargs,
+        )
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
-            "task_id": self.task_id,
-            "thread_id": self.thread_id,
-            "topic": self.topic,
-            "user_id": self.user_id,
-            "user_name": self.user_name,
-            "status": self.status,
-            "current_step": self.current_step,
-            "is_running": self.is_running,
-            "is_pending_review": self.is_pending_review,
-            "evidence_count": self.evidence_count,
-            "has_report": self.has_report,
-            "error": self.error,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
-        }
+        return self.model_dump()
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TaskRecord":

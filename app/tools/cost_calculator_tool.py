@@ -8,9 +8,9 @@ Eliminates financial hallucinations from report generation.
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 
 from app.config.env_config import CLOUD_PRICING_JSON
@@ -195,3 +195,34 @@ def calculate_cost_tool(
         "region": region,
     }
     return default_cost_calculator.calculate_tco(config=cfg)
+
+
+class CostCalculatorTool(BaseTool):
+    """Tool that computes deterministic Total Cost of Ownership (TCO) for databases and cloud platforms."""
+
+    name: str = "calculate_cost"
+    description: str = (
+        "Compute deterministic Total Cost of Ownership (TCO) for databases "
+        "and cloud infrastructure platforms without financial hallucinations."
+    )
+    args_schema: Type[BaseModel] = CostCalculatorInput
+
+    def _run(
+        self,
+        databases: Optional[List[str]] = None,
+        storage_gb: float = 500.0,
+        compute_instances: int = 3,
+        projection_months: int = 12,
+        include_support: bool = True,
+        region: str = "us-east-1",
+    ) -> Dict[str, Any]:
+        """Execute deterministic cloud cost calculation."""
+        cfg = {
+            "databases": databases or ["postgresql", "mongodb"],
+            "storage_gb": storage_gb,
+            "compute_instances": compute_instances,
+            "projection_months": projection_months,
+            "include_support": include_support,
+            "region": region,
+        }
+        return default_cost_calculator.calculate_tco(config=cfg)

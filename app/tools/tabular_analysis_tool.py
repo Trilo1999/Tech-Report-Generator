@@ -6,8 +6,8 @@ statistics from benchmark_results.csv. Ensures non-hallucinatory numerical facts
 """
 
 from pathlib import Path
-from typing import Any, Dict, Optional
-from langchain_core.tools import tool
+from typing import Any, Dict, Optional, Type
+from langchain_core.tools import BaseTool, tool
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field
@@ -185,3 +185,25 @@ def analyze_csv_tool(
     Computes exact throughput ops/sec, latency percentiles, and concurrency scaling.
     """
     return default_tabular_analyzer.analyze(file_path=file_path, operation=operation, filter_database=filter_database)
+
+
+class TabularAnalysisTool(BaseTool):
+    """Tool that executes deterministic Pandas analysis on benchmark telemetry data."""
+
+    name: str = "analyze_csv"
+    description: str = (
+        "Execute deterministic Pandas analytical calculations on tabular benchmark telemetry data. "
+        "Computes exact throughput ops/sec, latency percentiles, and concurrency scaling."
+    )
+    args_schema: Type[BaseModel] = TabularAnalysisInput
+
+    def _run(
+        self,
+        operation: str = "summary_stats",
+        filter_database: Optional[str] = None,
+        file_path: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Execute tabular benchmark telemetry analytics."""
+        return default_tabular_analyzer.analyze(
+            file_path=file_path, operation=operation, filter_database=filter_database
+        )

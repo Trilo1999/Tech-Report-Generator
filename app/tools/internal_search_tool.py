@@ -6,8 +6,8 @@ strict metadata filtering (e.g., doc_type='pdf' vs doc_type='guideline').
 Returns standardized [QDR-xx] source records with scores and source metadata.
 """
 
-from typing import Any, Dict, List, Optional
-from langchain_core.tools import tool
+from typing import Any, Dict, List, Optional, Type
+from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 from qdrant_client.models import FieldCondition, Filter, MatchValue
 
@@ -118,3 +118,25 @@ def search_internal_documents_tool(
     Returns ranked chunks tagged with [QDR-xx] identifiers.
     """
     return default_internal_retriever.search(query=query, filters=filters, limit=limit, min_score=min_score)
+
+
+class InternalSearchTool(BaseTool):
+    """Tool that searches proprietary internal engineering standards and guidelines."""
+
+    name: str = "search_internal_documents"
+    description: str = (
+        "Search proprietary internal engineering standards, architectural decision records, "
+        "and multi-tenant infrastructure guidelines indexed in the Qdrant vector database. "
+        "Returns ranked chunks tagged with [QDR-xx] identifiers."
+    )
+    args_schema: Type[BaseModel] = InternalSearchInput
+
+    def _run(
+        self,
+        query: str,
+        filters: Optional[Dict[str, Any]] = None,
+        limit: int = TOP_K_SEARCH_RESULTS,
+        min_score: float = 0.25,
+    ) -> List[Dict[str, Any]]:
+        """Execute internal document semantic search."""
+        return default_internal_retriever.search(query=query, filters=filters, limit=limit, min_score=min_score)

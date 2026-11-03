@@ -24,6 +24,7 @@ class AppError(Exception):
         """
         return {
             "error": {"code": self.code, "message": self.message},
+            "detail": self.message,
             "path": path,
         }
 
