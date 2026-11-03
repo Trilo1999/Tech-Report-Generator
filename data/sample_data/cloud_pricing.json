@@ -59,6 +59,20 @@
       "price_per_hour": 0.46,
       "description": "Azure D4s v5 General Purpose Enterprise VM"
     },
+    "naive_rag": {
+      "instance_type": "Standard-Vector-Node",
+      "vcpus": 4,
+      "memory_gb": 16,
+      "price_per_hour": 0.28,
+      "description": "Dense Vector Search & Standard Retrieval Compute Node"
+    },
+    "advanced_rag": {
+      "instance_type": "GPU-Reranker-Cluster",
+      "vcpus": 8,
+      "memory_gb": 32,
+      "price_per_hour": 0.58,
+      "description": "Hybrid Vector Indexing & Cross-Encoder Reranking Cluster"
+    },
     "gcp": {
       "instance_type": "n2-standard-4",
       "vcpus": 4,
@@ -130,6 +144,20 @@
       "iops_included": 3500,
       "additional_iops_price": 0.004,
       "description": "Google Cloud Balanced Persistent Disk"
+    },
+    "naive_rag": {
+      "type": "Standard Vector Storage (Qdrant/Pinecone)",
+      "price_per_gb_month": 0.15,
+      "iops_included": 3000,
+      "additional_iops_price": 0.005,
+      "description": "Vector Index & Chunk Payload Storage"
+    },
+    "advanced_rag": {
+      "type": "High-Performance HNSW Memory-Mapped Index",
+      "price_per_gb_month": 0.22,
+      "iops_included": 8000,
+      "additional_iops_price": 0.008,
+      "description": "Hybrid Vector Indexing with High-Memory MMap Allocation"
     }
   },
   "backup": {
@@ -177,6 +205,16 @@
       "price_per_gb_month": 0.020,
       "retention_days": 14,
       "description": "Google Cloud Storage Nearline snapshot archive"
+    },
+    "naive_rag": {
+      "price_per_gb_month": 0.020,
+      "retention_days": 14,
+      "description": "Daily Vector Index & Chunk Payload Snapshot"
+    },
+    "advanced_rag": {
+      "price_per_gb_month": 0.025,
+      "retention_days": 30,
+      "description": "Multi-Zone Vector Index Snapshot & Cold Storage Archive"
     }
   },
   "data_transfer": {
@@ -229,6 +267,16 @@
       "plan": "Enhanced",
       "monthly_base": 90.00,
       "description": "Google Cloud Enhanced Support Tier"
+    },
+    "naive_rag": {
+      "plan": "Developer",
+      "monthly_base": 80.00,
+      "description": "Developer SLA Vector Database Platform Support"
+    },
+    "advanced_rag": {
+      "plan": "Enterprise-Production",
+      "monthly_base": 160.00,
+      "description": "24/7 Dedicated Vector Search & Reranking Cluster SLA"
     }
   },
   "framework_licensing": {

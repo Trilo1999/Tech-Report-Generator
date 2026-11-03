@@ -139,6 +139,26 @@
       "date": "2024-09-18",
       "reliability_score": 0.92,
       "snippet": "Architectural comparison between AWS and Azure demonstrates divergent philosophies for multi-tenant SaaS isolation. AWS favors multi-account topologies orchestrated via AWS Organizations, Control Tower, and IAM permission boundaries, providing hard hypervisor and billing isolation per tenant. Azure utilizes Management Groups, Subscriptions, and Azure Policy with Entra ID (Azure AD) Conditional Access for centralized identity governance. For enterprise compliance (FedRAMP High, HIPAA, SOC 2 Type II), AWS offers more granular IAM role chaining and KMS customer-managed keys, whereas Azure provides seamless identity federation for enterprises with existing Active Directory footprints."
+    },
+    {
+      "id": "EXT-15",
+      "title": "Retrieval-Augmented Generation (RAG) Architecture Survey: Naive, Advanced, and Modular Paradigms",
+      "url": "https://arxiv.org/abs/2312.10997",
+      "author": "Yunfan Gao et al.",
+      "publication": "arXiv Computer Science & AI Review",
+      "date": "2024-03-15",
+      "reliability_score": 0.95,
+      "snippet": "Comprehensive architectural analysis of RAG paradigms. Naive RAG follows a rigid Index-Retrieve-Generate workflow with fixed-size chunking and flat vector retrieval, suffering from low precision, lost-in-the-middle context limits, and hallucination on domain queries. Advanced RAG incorporates pre-retrieval optimization (hierarchical chunking, metadata filtering) and post-retrieval reranking (cross-encoders), improving retrieval precision by 28-35% and reducing hallucination rates to under 4%. Modular RAG introduces iterative routing and dynamic memory, enabling scalable multi-source retrieval across disparate vector stores."
+    },
+    {
+      "id": "EXT-16",
+      "title": "Vector Database Scaling and Query Latency: Qdrant, Pinecone, and Hybrid Search Benchmarks",
+      "url": "https://vectordb-bench.io/rag-latency-throughput-2024",
+      "author": "Dr. Sarah Lin",
+      "publication": "ACM Distributed Systems Telemetry",
+      "date": "2024-08-22",
+      "reliability_score": 0.93,
+      "snippet": "Empirical latency evaluations of vector retrieval across 10M embeddings reveal that dense HNSW vector search achieves mean p95 query latency of 14-22ms under 50 concurrency, but degrades under unoptimized multi-tenant filters. Hybrid search combining dense embeddings with sparse BM25 keyword matching provides optimal precision for technical documentation. Cross-encoder rerankers introduce 15-30ms additional latency per top-k candidate set, requiring asynchronous batched inference or GPU acceleration to maintain sub-100ms end-to-end SLA in high-concurrency enterprise pipelines."
     }
   ],
   "search_config": {
