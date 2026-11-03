@@ -24,6 +24,7 @@ from app.agents.graph.orchestrator import (
     orchestrator_planner,
     orchestrator_synthesizer,
 )
+from app.agents.graph.state import ResearchState
 from app.agents.graph.subagents import (
     analytics_agent,
     drafting_agent,
@@ -31,7 +32,6 @@ from app.agents.graph.subagents import (
     internal_research_agent,
 )
 from app.agents.graph.supervisor import route_supervisor, supervisor_agent
-from app.agents.graph.state import ResearchState
 
 
 def build_research_graph() -> StateGraph:
@@ -243,7 +243,9 @@ def build_orchestrator_worker_graph() -> StateGraph:
     return workflow
 
 
-def create_orchestrator_worker_graph(checkpointer: Optional[Any] = None) -> CompiledStateGraph:
+def create_orchestrator_worker_graph(
+    checkpointer: Optional[Any] = None,
+) -> CompiledStateGraph:
     """
     Build and compile the orchestrator-worker graph with optional persistence checkpointer.
     """

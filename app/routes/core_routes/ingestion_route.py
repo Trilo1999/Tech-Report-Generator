@@ -23,7 +23,9 @@ def get_ingestion_request(file: UploadFile = File(...)) -> IngestionRequest:
     return IngestionRequest(file=file)
 
 
-@router.post("/upload", status_code=status.HTTP_201_CREATED, response_model=IngestionResponse)
+@router.post(
+    "/upload", status_code=status.HTTP_201_CREATED, response_model=IngestionResponse
+)
 async def ingest_file(request: IngestionRequest = Depends(get_ingestion_request)):
     """Upload a file and index it (or queue for async ingestion if RabbitMQ enabled).
 

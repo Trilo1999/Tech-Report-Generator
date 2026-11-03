@@ -3,6 +3,7 @@ Unit and integration tests for Authentication and Role-Based Access Control (RBA
 """
 
 import time
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -49,11 +50,17 @@ def test_login_demo_accounts():
 def test_login_invalid_credentials():
     """Verify 401 response for wrong password or non-existent user."""
     # Wrong password
-    res = client.post("/api/auth/login", json={"email": "admin@antigravity.ai", "password": "BadPassword"})
+    res = client.post(
+        "/api/auth/login",
+        json={"email": "admin@antigravity.ai", "password": "BadPassword"},
+    )
     assert res.status_code == 401
 
     # Non-existent email
-    res2 = client.post("/api/auth/login", json={"email": "nobody@antigravity.ai", "password": "Password123"})
+    res2 = client.post(
+        "/api/auth/login",
+        json={"email": "nobody@antigravity.ai", "password": "Password123"},
+    )
     assert res2.status_code == 401
 
 
@@ -102,19 +109,25 @@ def test_unauthenticated_request_rejected():
 
 def test_invalid_token_rejected():
     """Verify 401 when accessing endpoints with malformed or invalid token."""
-    res = client.get("/api/auth/me", headers={"Authorization": "Bearer bad.token.value"})
+    res = client.get(
+        "/api/auth/me", headers={"Authorization": "Bearer bad.token.value"}
+    )
     assert res.status_code == 401
 
 
 def test_rbac_restrictions_on_research_start():
     """Verify RBAC: Only 'admin' and 'researcher' can start research."""
     # Viewer token
-    viewer_login = client.post("/api/auth/login", json={"email": "viewer@antigravity.ai", "password": "Viewer@123"})
+    viewer_login = client.post(
+        "/api/auth/login",
+        json={"email": "viewer@antigravity.ai", "password": "Viewer@123"},
+    )
     viewer_token = viewer_login.json()["access_token"]
 
     # Reviewer token
     reviewer_login = client.post(
-        "/api/auth/login", json={"email": "reviewer@antigravity.ai", "password": "Reviewer@123"}
+        "/api/auth/login",
+        json={"email": "reviewer@antigravity.ai", "password": "Reviewer@123"},
     )
     reviewer_token = reviewer_login.json()["access_token"]
 

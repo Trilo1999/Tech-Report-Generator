@@ -53,7 +53,9 @@ def get_user(
     return service.get_user(user_id=user_id, role_ids=payload.role_ids)
 
 
-@router.post("/create_user", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/create_user", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
 def create_user(
     request: UserCreate,
     payload: TokenPayload = Depends(get_current_user_payload),

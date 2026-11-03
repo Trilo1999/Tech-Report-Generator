@@ -5,8 +5,8 @@ import json
 import os
 import re
 import time
-from typing import Any, Dict, List, Optional
 import uuid
+from typing import Any, Dict, List, Optional
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
@@ -14,8 +14,20 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langgraph.types import interrupt
 
+from app.agents.graph.prompts import (
+    DRAFT_REPORT_PROMPT,
+    EVALUATE_EVIDENCE_PROMPT,
+    PLAN_RESEARCH_PROMPT,
+    REVISE_SECTIONS_PROMPT,
+)
+from app.agents.graph.state import (
+    DraftReport,
+    EvidenceItem,
+    HumanFeedback,
+    ResearchState,
+)
+from app.config.env_config import GEMINI_API_KEY as GOOGLE_API_KEY
 from app.config.env_config import (
-    GEMINI_API_KEY as GOOGLE_API_KEY,
     HIVE_BASE_URL,
     HIVE_MODEL_NAME,
     HIVE_SECRET_KEY,
@@ -24,13 +36,6 @@ from app.config.env_config import (
     MIN_SUBQUESTIONS,
     OPENAI_API_KEY,
 )
-from app.agents.graph.prompts import (
-    DRAFT_REPORT_PROMPT,
-    EVALUATE_EVIDENCE_PROMPT,
-    PLAN_RESEARCH_PROMPT,
-    REVISE_SECTIONS_PROMPT,
-)
-from app.agents.graph.state import DraftReport, EvidenceItem, HumanFeedback, ResearchState
 from app.tools.cost_calculator_tool import calculate_cost
 from app.tools.external_search_tool import search_external_sources
 from app.tools.internal_search_tool import search_internal_documents
@@ -49,7 +54,10 @@ def get_llm() -> Optional[BaseChatModel]:
         return None
 
     # 1. Hive AI (OpenAI SDK structure)
-    if HIVE_SECRET_KEY and HIVE_SECRET_KEY.strip() not in ("", "your_hive_secret_key_here"):
+    if HIVE_SECRET_KEY and HIVE_SECRET_KEY.strip() not in (
+        "",
+        "your_hive_secret_key_here",
+    ):
         try:
             return ChatOpenAI(
                 model=HIVE_MODEL_NAME,
@@ -61,9 +69,16 @@ def get_llm() -> Optional[BaseChatModel]:
             pass
 
     # 2. Prefer Gemini if GOOGLE_API_KEY is configured
-    if GOOGLE_API_KEY and GOOGLE_API_KEY.strip() not in ("", "your_gemini_api_key_here"):
+    if GOOGLE_API_KEY and GOOGLE_API_KEY.strip() not in (
+        "",
+        "your_gemini_api_key_here",
+    ):
         try:
-            model = LLM_MODEL_NAME if "gemini" in LLM_MODEL_NAME else "gemini-3-flash-preview"
+            model = (
+                LLM_MODEL_NAME
+                if "gemini" in LLM_MODEL_NAME
+                else "gemini-3-flash-preview"
+            )
             return ChatGoogleGenerativeAI(
                 model=model,
                 temperature=LLM_TEMPERATURE,
@@ -73,7 +88,10 @@ def get_llm() -> Optional[BaseChatModel]:
             pass
 
     # 3. Fall back to OpenAI if OPENAI_API_KEY is configured
-    if OPENAI_API_KEY and OPENAI_API_KEY.strip() not in ("", "your_openai_api_key_here"):
+    if OPENAI_API_KEY and OPENAI_API_KEY.strip() not in (
+        "",
+        "your_openai_api_key_here",
+    ):
         try:
             model = LLM_MODEL_NAME if "gpt" in LLM_MODEL_NAME else "gpt-4o-mini"
             return ChatOpenAI(
@@ -104,7 +122,10 @@ def _invoke_llm_json(prompt: str, fallback: Dict[str, Any]) -> Dict[str, Any]:
             response = llm.invoke([HumanMessage(content=prompt)])
             if hasattr(response, "content"):
                 if isinstance(response.content, list):
-                    text = "".join(b.get("text", "") if isinstance(b, dict) else str(b) for b in response.content)
+                    text = "".join(
+                        b.get("text", "") if isinstance(b, dict) else str(b)
+                        for b in response.content
+                    )
                 else:
                     text = str(response.content)
             else:
@@ -128,7 +149,9 @@ def _invoke_llm_json(prompt: str, fallback: Dict[str, Any]) -> Dict[str, Any]:
                 google_api_key=GOOGLE_API_KEY,
             )
             response = gemini.invoke([HumanMessage(content=prompt)])
-            text = str(response.content) if hasattr(response, "content") else str(response)
+            text = (
+                str(response.content) if hasattr(response, "content") else str(response)
+            )
             cleaned = _clean_json_response(text)
             return json.loads(cleaned)
         except Exception:
@@ -155,7 +178,10 @@ def plan_research(state: ResearchState) -> Dict[str, Any]:
 
         memories = pg_search_memories(topic, limit=2)
         if memories:
-            recalled = [f"- Prior precedent: {m.get('topic')}: {m.get('summary')[:120]}" for m in memories]
+            recalled = [
+                f"- Prior precedent: {m.get('topic')}: {m.get('summary')[:120]}"
+                for m in memories
+            ]
             prior_context = "\n" + "\n".join(recalled)
     except Exception:
         pass
@@ -198,12 +224,18 @@ def plan_research(state: ResearchState) -> Dict[str, Any]:
 def gather_internal_evidence(state: ResearchState) -> List[EvidenceItem]:
     """Retrieve grounding evidence from Qdrant vector database."""
     existing_evidence = state.get("evidence", [])
-    existing_ids = {item.get("source_id") for item in existing_evidence if isinstance(item, dict)}
+    existing_ids = {
+        item.get("source_id") for item in existing_evidence if isinstance(item, dict)
+    }
 
     iteration = state.get("iteration_count", 0)
     missing_gaps = state.get("missing_gaps", [])
 
-    queries = missing_gaps[:3] if (iteration > 0 and missing_gaps) else state.get("subquestions", [])[:4]
+    queries = (
+        missing_gaps[:3]
+        if (iteration > 0 and missing_gaps)
+        else state.get("subquestions", [])[:4]
+    )
     if not queries:
         queries = [state.get("topic", "Database comparison")]
 
@@ -233,12 +265,18 @@ def gather_internal_evidence(state: ResearchState) -> List[EvidenceItem]:
 def gather_external_evidence(state: ResearchState) -> List[EvidenceItem]:
     """Retrieve grounding evidence from external analyst sources and mock APIs."""
     existing_evidence = state.get("evidence", [])
-    existing_ids = {item.get("source_id") for item in existing_evidence if isinstance(item, dict)}
+    existing_ids = {
+        item.get("source_id") for item in existing_evidence if isinstance(item, dict)
+    }
 
     iteration = state.get("iteration_count", 0)
     missing_gaps = state.get("missing_gaps", [])
 
-    queries = missing_gaps[:3] if (iteration > 0 and missing_gaps) else state.get("subquestions", [])[:4]
+    queries = (
+        missing_gaps[:3]
+        if (iteration > 0 and missing_gaps)
+        else state.get("subquestions", [])[:4]
+    )
     if not queries:
         queries = [state.get("topic", "Database comparison")]
 
@@ -368,7 +406,11 @@ def execute_calculations(state: ResearchState) -> Dict[str, Any]:
                 reliability_score=0.99,
                 metadata={
                     "operation": "multi_tier_benchmark",
-                    "metrics_computed": ["summary_stats", "latency_percentiles", "concurrency_scaling"],
+                    "metrics_computed": [
+                        "summary_stats",
+                        "latency_percentiles",
+                        "concurrency_scaling",
+                    ],
                 },
             )
         )
@@ -459,15 +501,20 @@ def evaluate_evidence(state: ResearchState) -> Dict[str, Any]:
 
     # Prepare summaries for LLM evaluation
     evidence_summary = "\n".join(
-        [f"- [{e.get('source_id')}] {e.get('title')}: {e.get('content')[:150]}..." for e in evidence_list[:8]]
+        [
+            f"- [{e.get('source_id')}] {e.get('title')}: {e.get('content')[:150]}..."
+            for e in evidence_list[:8]
+        ]
     )
     calculations_summary = json.dumps(state.get("calculations", {}), default=str)[:600]
 
     fallback = {
         "is_sufficient": all_dimensions_covered,
-        "missing_gaps": []
-        if all_dimensions_covered
-        else ["Need deeper analysis on MongoDB multi-shard isolation constraints."],
+        "missing_gaps": (
+            []
+            if all_dimensions_covered
+            else ["Need deeper analysis on MongoDB multi-shard isolation constraints."]
+        ),
         "conflicting_evidence": [],
     }
 
@@ -487,7 +534,9 @@ def evaluate_evidence(state: ResearchState) -> Dict[str, Any]:
 
     # If deemed insufficient without gaps, supply a targeted fallback gap
     if not is_sufficient and not missing_gaps:
-        missing_gaps = ["Need deeper analysis on multi-tenant row-level security isolation and sharding."]
+        missing_gaps = [
+            "Need deeper analysis on multi-tenant row-level security isolation and sharding."
+        ]
 
     # Cross-source contradiction analysis
     conflicts: List[Dict[str, Any]] = llm_result.get("conflicting_evidence", [])
@@ -499,7 +548,9 @@ def evaluate_evidence(state: ResearchState) -> Dict[str, Any]:
     has_ext_01 = any(e.get("source_id") == "EXT-01" for e in evidence_list)
     has_ext_13 = any(e.get("source_id") == "EXT-13" for e in evidence_list)
     topic_lower = state.get("topic", "").lower()
-    is_cloud_topic = any(k in topic_lower for k in ("aws", "azure", "gcp", "cloud", "ec2"))
+    is_cloud_topic = any(
+        k in topic_lower for k in ("aws", "azure", "gcp", "cloud", "ec2")
+    )
 
     if has_csv_01 and has_ext_13 and is_cloud_topic and not conflicts:
         conflicts.append(
@@ -557,10 +608,22 @@ def draft_report(state: ResearchState) -> Dict[str, Any]:
 
     # Fallback report with ground truth citations and one explicit unsupported claim
     is_db_topic = any(
-        k in topic.lower() for k in ("postgres", "mongo", "database", "db", "sql", "nosql", "datastore", "backend")
+        k in topic.lower()
+        for k in (
+            "postgres",
+            "mongo",
+            "database",
+            "db",
+            "sql",
+            "nosql",
+            "datastore",
+            "backend",
+        )
     )
     is_frontend_topic = "react" in topic.lower() and "angular" in topic.lower()
-    is_cloud_topic = any(k in topic.lower() for k in ("aws", "azure", "gcp", "cloud", "ec2"))
+    is_cloud_topic = any(
+        k in topic.lower() for k in ("aws", "azure", "gcp", "cloud", "ec2")
+    )
 
     if is_frontend_topic:
         fallback_sections = {
@@ -708,7 +771,15 @@ def draft_report(state: ResearchState) -> Dict[str, Any]:
     fallback_report: DraftReport = {
         "title": f"Technical Evaluation & Decision Report: {topic}",
         "sections": fallback_sections,
-        "cited_sources": ["QDR-01", "QDR-02", "QDR-03", "EXT-01", "EXT-02", "CSV-01", "COST-01"],
+        "cited_sources": [
+            "QDR-01",
+            "QDR-02",
+            "QDR-03",
+            "EXT-01",
+            "EXT-02",
+            "CSV-01",
+            "COST-01",
+        ],
         "unsupported_claims": fallback_unsupported,
     }
 
@@ -723,7 +794,11 @@ def draft_report(state: ResearchState) -> Dict[str, Any]:
         topic=topic,
         subquestions="\n".join([f"- {sq}" for sq in subquestions]),
         evidence_catalog=evidence_catalog or "No evidence catalog provided.",
-        calculations_summary=calculations_summary[:1500] if calculations_summary else "No calculations provided.",
+        calculations_summary=(
+            calculations_summary[:1500]
+            if calculations_summary
+            else "No calculations provided."
+        ),
     )
 
     llm_result = _invoke_llm_json(prompt, fallback)
@@ -731,8 +806,12 @@ def draft_report(state: ResearchState) -> Dict[str, Any]:
     draft: DraftReport = {
         "title": llm_result.get("title", fallback_report["title"]),
         "sections": llm_result.get("sections", fallback_report["sections"]),
-        "cited_sources": llm_result.get("cited_sources", fallback_report["cited_sources"]),
-        "unsupported_claims": llm_result.get("unsupported_claims", fallback_report["unsupported_claims"]),
+        "cited_sources": llm_result.get(
+            "cited_sources", fallback_report["cited_sources"]
+        ),
+        "unsupported_claims": llm_result.get(
+            "unsupported_claims", fallback_report["unsupported_claims"]
+        ),
     }
 
     # Embed explicit conflict reconciliations into report sections
@@ -783,7 +862,11 @@ def human_review(state: ResearchState) -> Dict[str, Any]:
     )
 
     if not isinstance(review_feedback, dict):
-        review_feedback = {"decision": "approved", "feedback_notes": "", "target_sections": []}
+        review_feedback = {
+            "decision": "approved",
+            "feedback_notes": "",
+            "target_sections": [],
+        }
 
     decision = review_feedback.get("decision", "approved").lower().strip()
     status_map = {
@@ -832,7 +915,9 @@ def revise_sections(state: ResearchState) -> Dict[str, Any]:
     ]
     evidence_catalog = "\n".join(catalog_lines)
 
-    target_content_map = {sec: sections.get(sec, "") for sec in target_sections if sec in sections}
+    target_content_map = {
+        sec: sections.get(sec, "") for sec in target_sections if sec in sections
+    }
 
     # Construct surgical revision fallback
     fallback_revised: Dict[str, str] = {}
@@ -843,24 +928,35 @@ def revise_sections(state: ResearchState) -> Dict[str, Any]:
         existing_text = sections.get(sec, "")
         substantive_addon = []
 
-        if any(w in notes_lower for w in ("security", "compliance", "isolation", "safe")):
+        if any(
+            w in notes_lower for w in ("security", "compliance", "isolation", "safe")
+        ):
             substantive_addon.append(
                 "• Enterprise Security & Compliance Assessment: Based on enterprise security mandates [QDR-03: Security Guidelines], "
                 "solutions with strict static type-checking and audited JVM/container sandboxing reduce runtime execution vulnerabilities. "
                 "For dynamic scripting runtimes, implementing defensive input sanitization and containerized execution boundaries is mandatory [QDR-01: Architectural Guidelines]."
             )
-        if any(w in notes_lower for w in ("fast", "speed", "velocity", "development", "quick")):
+        if any(
+            w in notes_lower
+            for w in ("fast", "speed", "velocity", "development", "quick")
+        ):
             substantive_addon.append(
                 "• Faster Development & Prototyping Velocity: Industry technical evaluations [EXT-01: Industry Technical Whitepaper] "
                 "demonstrate that rich AI/LLM native ecosystems (featuring comprehensive LangChain, LlamaIndex, and Hugging Face SDKs) "
                 "deliver approximately 2.5x faster prototyping velocity and significantly lower implementation friction."
             )
-        if any(w in notes_lower for w in ("36-month", "36 month", "multi-year", "long-term")):
+        if any(
+            w in notes_lower
+            for w in ("36-month", "36 month", "multi-year", "long-term")
+        ):
             substantive_addon.append(
                 "• 36-Month Lifecycle Cost Projection: Re-evaluated operational scaling against internal guidelines [QDR-01: Architectural Guidelines] "
                 "and 36-month cost projections [COST-01: Cloud Financial Model], establishing long-term amortized compute and infrastructure efficiencies."
             )
-        if any(w in notes_lower for w in ("which", "best", "verdict", "recommend", "winner", "project")):
+        if any(
+            w in notes_lower
+            for w in ("which", "best", "verdict", "recommend", "winner", "project")
+        ):
             substantive_addon.append(
                 f"• Definitive Verdict for Your Project: For {topic}, if rapid iteration, time-to-market, and LLM framework native support "
                 "are your primary goals, choose the dynamic, AI-centric platform. If your priority is hardened enterprise compliance, existing "
@@ -895,7 +991,9 @@ def revise_sections(state: ResearchState) -> Dict[str, Any]:
         target_sections=", ".join(target_sections),
         current_sections_content=json.dumps(target_content_map, indent=2),
         evidence_catalog=evidence_catalog or "Evidence preserved.",
-        calculations_summary=json.dumps(state.get("calculations", {}), default=str)[:600],
+        calculations_summary=json.dumps(state.get("calculations", {}), default=str)[
+            :600
+        ],
     )
 
     llm_result = _invoke_llm_json(prompt, fallback)
@@ -944,7 +1042,10 @@ def export_report(state: ResearchState) -> Dict[str, Any]:
     feedback = state.get("human_feedback") or {}
 
     report_content: Dict[str, Any] = {
-        "title": draft.get("title", f"Technical Decision Report: {state.get('topic', 'Database Comparison')}"),
+        "title": draft.get(
+            "title",
+            f"Technical Decision Report: {state.get('topic', 'Database Comparison')}",
+        ),
         "sections": draft.get("sections", {}),
         "cited_sources": draft.get("cited_sources", []),
         "evidence_items": state.get("evidence", []),

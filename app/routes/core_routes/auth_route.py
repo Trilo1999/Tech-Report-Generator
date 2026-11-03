@@ -30,7 +30,9 @@ async def login(request: LoginRequest) -> TokenResponse:
 
 
 @router.get("/me", response_model=User)
-async def get_current_user_profile(current_user: User = Depends(get_current_user)) -> User:
+async def get_current_user_profile(
+    current_user: User = Depends(get_current_user),
+) -> User:
     """Retrieve profile and role information for currently authenticated user."""
     return current_user
 

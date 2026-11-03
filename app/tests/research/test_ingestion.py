@@ -4,7 +4,11 @@ Unit and integration tests for Qdrant Ingestion Pipeline & Metadata Indexing.
 
 from qdrant_client.models import FieldCondition, Filter, MatchValue
 
-from app.config.env_config import ARCHITECTURE_GUIDELINES_MD, DATABASE_COMPARISON_PDF, QDRANT_COLLECTION_NAME
+from app.config.env_config import (
+    ARCHITECTURE_GUIDELINES_MD,
+    DATABASE_COMPARISON_PDF,
+    QDRANT_COLLECTION_NAME,
+)
 from app.services.core_services.qdrant_ingestion import (
     chunk_text,
     get_qdrant_client,
@@ -63,11 +67,15 @@ def test_ingestion_pipeline_execution():
 
 def test_semantic_search_accuracy():
     """Verify semantic search retrieves relevant chunks with high cosine similarity."""
-    results = search_documents(query="How does PostgreSQL handle multi-tenant isolation and RLS?", limit=3)
+    results = search_documents(
+        query="How does PostgreSQL handle multi-tenant isolation and RLS?", limit=3
+    )
     assert len(results) > 0
 
     top_result = results[0]
-    assert top_result.score > 0.65, f"Expected high cosine similarity score, got {top_result.score}"
+    assert (
+        top_result.score > 0.65
+    ), f"Expected high cosine similarity score, got {top_result.score}"
     assert "payload" in dir(top_result)
     assert "content" in top_result.payload
     content = top_result.payload["content"].lower()
@@ -76,9 +84,13 @@ def test_semantic_search_accuracy():
 
 def test_metadata_filtering_guidelines_only():
     """Verify metadata filtering strictly isolates guideline documents."""
-    guideline_filter = Filter(must=[FieldCondition(key="doc_type", match=MatchValue(value="guideline"))])
+    guideline_filter = Filter(
+        must=[FieldCondition(key="doc_type", match=MatchValue(value="guideline"))]
+    )
     results = search_documents(
-        query="What are the mandatory ACID and data sovereignty rules?", query_filter=guideline_filter, limit=4
+        query="What are the mandatory ACID and data sovereignty rules?",
+        query_filter=guideline_filter,
+        limit=4,
     )
 
     assert len(results) > 0
@@ -89,9 +101,13 @@ def test_metadata_filtering_guidelines_only():
 
 def test_metadata_filtering_pdf_only():
     """Verify metadata filtering strictly isolates PDF documents."""
-    pdf_filter = Filter(must=[FieldCondition(key="doc_type", match=MatchValue(value="pdf"))])
+    pdf_filter = Filter(
+        must=[FieldCondition(key="doc_type", match=MatchValue(value="pdf"))]
+    )
     results = search_documents(
-        query="PostgreSQL vs MongoDB throughput and latency comparison", query_filter=pdf_filter, limit=4
+        query="PostgreSQL vs MongoDB throughput and latency comparison",
+        query_filter=pdf_filter,
+        limit=4,
     )
 
     assert len(results) > 0

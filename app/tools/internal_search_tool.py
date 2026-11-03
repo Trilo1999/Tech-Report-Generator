@@ -6,27 +6,38 @@ strict metadata filtering (e.g., doc_type='pdf' vs doc_type='guideline').
 Returns standardized [QDR-xx] source records with scores and source metadata.
 """
 
-from typing import Any, Dict, List, Optional
-from langchain_core.tools import tool
+from typing import Any, Dict, List, Optional, Type
+
+from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 from qdrant_client.models import FieldCondition, Filter, MatchValue
 
 from app.config.env_config import TOP_K_SEARCH_RESULTS
-from app.services.core_services.qdrant_ingestion import get_qdrant_client, search_documents
+from app.services.core_services.qdrant_ingestion import (
+    get_qdrant_client,
+    search_documents,
+)
 
 
 class InternalDocumentRetriever:
     """Object-oriented retriever for proprietary internal guidelines indexed in Qdrant."""
 
-    def __init__(self, default_limit: int = TOP_K_SEARCH_RESULTS, default_min_score: float = 0.25):
+    def __init__(
+        self, default_limit: int = TOP_K_SEARCH_RESULTS, default_min_score: float = 0.25
+    ):
         self.default_limit = default_limit
         self.default_min_score = default_min_score
 
-    def build_filter(self, filters: Optional[Dict[str, Any]] = None) -> Optional[Filter]:
+    def build_filter(
+        self, filters: Optional[Dict[str, Any]] = None
+    ) -> Optional[Filter]:
         """Convert a dictionary of metadata constraints into a Qdrant Filter object."""
         if not filters:
             return None
-        conditions = [FieldCondition(key=key, match=MatchValue(value=value)) for key, value in filters.items()]
+        conditions = [
+            FieldCondition(key=key, match=MatchValue(value=value))
+            for key, value in filters.items()
+        ]
         return Filter(must=conditions) if conditions else None
 
     def search(
@@ -41,11 +52,18 @@ class InternalDocumentRetriever:
             return []
 
         effective_limit = limit if limit is not None else self.default_limit
-        effective_min_score = min_score if min_score is not None else self.default_min_score
+        effective_min_score = (
+            min_score if min_score is not None else self.default_min_score
+        )
 
         query_filter = self.build_filter(filters)
         client = get_qdrant_client()
-        points = search_documents(query=query.strip(), query_filter=query_filter, limit=effective_limit, client=client)
+        points = search_documents(
+            query=query.strip(),
+            query_filter=query_filter,
+            limit=effective_limit,
+            client=client,
+        )
 
         results: List[Dict[str, Any]] = []
         for idx, point in enumerate(points, start=1):
@@ -117,4 +135,30 @@ def search_internal_documents_tool(
     and multi-tenant infrastructure guidelines indexed in the Qdrant vector database.
     Returns ranked chunks tagged with [QDR-xx] identifiers.
     """
-    return default_internal_retriever.search(query=query, filters=filters, limit=limit, min_score=min_score)
+    return default_internal_retriever.search(
+        query=query, filters=filters, limit=limit, min_score=min_score
+    )
+
+
+class InternalSearchTool(BaseTool):
+    """Tool that searches proprietary internal engineering standards and guidelines."""
+
+    name: str = "search_internal_documents"
+    description: str = (
+        "Search proprietary internal engineering standards, architectural decision records, "
+        "and multi-tenant infrastructure guidelines indexed in the Qdrant vector database. "
+        "Returns ranked chunks tagged with [QDR-xx] identifiers."
+    )
+    args_schema: Type[BaseModel] = InternalSearchInput
+
+    def _run(
+        self,
+        query: str,
+        filters: Optional[Dict[str, Any]] = None,
+        limit: int = TOP_K_SEARCH_RESULTS,
+        min_score: float = 0.25,
+    ) -> List[Dict[str, Any]]:
+        """Execute internal document semantic search."""
+        return default_internal_retriever.search(
+            query=query, filters=filters, limit=limit, min_score=min_score
+        )

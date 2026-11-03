@@ -12,10 +12,21 @@ repos:
       - id: check-merge-conflict
       - id: check-case-conflict
 
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        files: ^app/
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        files: ^app/
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.9
     hooks:
       - id: ruff
-        args: [--fix, --line-length=120]
-      - id: ruff-format
-        args: [--line-length=120]
+        args: [--fix]
+        files: ^app/

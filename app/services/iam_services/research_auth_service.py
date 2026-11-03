@@ -30,7 +30,11 @@ class AuthService:
     @classmethod
     def register_account(cls, request: RegisterRequest) -> TokenResponse:
         """Register a new user account and return JWT credentials."""
-        role = request.role if request.role in ["researcher", "reviewer", "viewer"] else "researcher"
+        role = (
+            request.role
+            if request.role in ["researcher", "reviewer", "viewer"]
+            else "researcher"
+        )
         user = create_user(
             email=request.email,
             name=request.name,

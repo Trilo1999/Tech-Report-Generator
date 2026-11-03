@@ -8,9 +8,9 @@ Eliminates financial hallucinations from report generation.
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 
 from app.config.env_config import CLOUD_PRICING_JSON
@@ -22,7 +22,11 @@ HOURS_PER_MONTH = 730
 class CloudCostCalculator:
     """Object-oriented engine for deterministic cloud infrastructure TCO calculations."""
 
-    def __init__(self, default_pricing_file: Optional[Path] = None, hours_per_month: int = HOURS_PER_MONTH):
+    def __init__(
+        self,
+        default_pricing_file: Optional[Path] = None,
+        hours_per_month: int = HOURS_PER_MONTH,
+    ):
         self.default_pricing_file = default_pricing_file or CLOUD_PRICING_JSON
         self.hours_per_month = hours_per_month
 
@@ -44,7 +48,9 @@ class CloudCostCalculator:
         pricing_data = self.load_pricing(pricing_file)
 
         cfg = config or {}
-        databases: List[str] = [db.lower() for db in cfg.get("databases", ["postgresql", "mongodb"])]
+        databases: List[str] = [
+            db.lower() for db in cfg.get("databases", ["postgresql", "mongodb"])
+        ]
         storage_gb: float = float(cfg.get("storage_gb", 500))
         compute_instances: int = int(cfg.get("compute_instances", 3))
         projection_months: int = int(cfg.get("projection_months", 12))
@@ -60,12 +66,16 @@ class CloudCostCalculator:
 
         for db in databases:
             if db not in compute_matrix or db not in storage_matrix:
-                raise KeyError(f"Pricing data not available for requested database: '{db}'")
+                raise KeyError(
+                    f"Pricing data not available for requested database: '{db}'"
+                )
 
             # 1. Compute Cost
             comp_info = compute_matrix[db]
             hourly_rate = float(comp_info["price_per_hour"])
-            monthly_compute = round(hourly_rate * self.hours_per_month * compute_instances, 2)
+            monthly_compute = round(
+                hourly_rate * self.hours_per_month * compute_instances, 2
+            )
 
             # 2. Storage Cost
             stor_info = storage_matrix[db]
@@ -83,7 +93,9 @@ class CloudCostCalculator:
                 monthly_support = float(support_matrix[db].get("monthly_base", 0.0))
 
             # Totals
-            total_monthly = round(monthly_compute + monthly_storage + monthly_backup + monthly_support, 2)
+            total_monthly = round(
+                monthly_compute + monthly_storage + monthly_backup + monthly_support, 2
+            )
             total_projected = round(total_monthly * projection_months, 2)
 
             breakdown[db] = {
@@ -111,14 +123,24 @@ class CloudCostCalculator:
             cheaper = db1 if cost1 < cost2 else db2
             expensive = db2 if cheaper == db1 else db1
             diff_amount = round(abs(cost1 - cost2), 2)
-            pct_savings = round((diff_amount / max(cost1, cost2)) * 100, 2) if max(cost1, cost2) > 0 else 0.0
+            pct_savings = (
+                round((diff_amount / max(cost1, cost2)) * 100, 2)
+                if max(cost1, cost2) > 0
+                else 0.0
+            )
 
             comparison = {
                 "cheaper_database": cheaper,
                 "more_expensive_database": expensive,
                 "projected_difference_amount": diff_amount,
                 "savings_percentage": pct_savings,
-                "monthly_difference": round(abs(breakdown[db1]["total_monthly"] - breakdown[db2]["total_monthly"]), 2),
+                "monthly_difference": round(
+                    abs(
+                        breakdown[db1]["total_monthly"]
+                        - breakdown[db2]["total_monthly"]
+                    ),
+                    2,
+                ),
             }
 
         return {
@@ -195,3 +217,34 @@ def calculate_cost_tool(
         "region": region,
     }
     return default_cost_calculator.calculate_tco(config=cfg)
+
+
+class CostCalculatorTool(BaseTool):
+    """Tool that computes deterministic Total Cost of Ownership (TCO) for databases and cloud platforms."""
+
+    name: str = "calculate_cost"
+    description: str = (
+        "Compute deterministic Total Cost of Ownership (TCO) for databases "
+        "and cloud infrastructure platforms without financial hallucinations."
+    )
+    args_schema: Type[BaseModel] = CostCalculatorInput
+
+    def _run(
+        self,
+        databases: Optional[List[str]] = None,
+        storage_gb: float = 500.0,
+        compute_instances: int = 3,
+        projection_months: int = 12,
+        include_support: bool = True,
+        region: str = "us-east-1",
+    ) -> Dict[str, Any]:
+        """Execute deterministic cloud cost calculation."""
+        cfg = {
+            "databases": databases or ["postgresql", "mongodb"],
+            "storage_gb": storage_gb,
+            "compute_instances": compute_instances,
+            "projection_months": projection_months,
+            "include_support": include_support,
+            "region": region,
+        }
+        return default_cost_calculator.calculate_tco(config=cfg)

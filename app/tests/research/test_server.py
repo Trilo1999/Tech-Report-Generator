@@ -36,8 +36,13 @@ def test_api_research_workflow_lifecycle():
     viewer_headers = {"Authorization": f"Bearer {viewer_token}"}
 
     # 1. Start research workflow (as Researcher)
-    start_payload = {"topic": "Enterprise Persistence Architecture Decision", "sync": True}
-    start_res = client.post("/api/research/start", json=start_payload, headers=researcher_headers)
+    start_payload = {
+        "topic": "Enterprise Persistence Architecture Decision",
+        "sync": True,
+    }
+    start_res = client.post(
+        "/api/research/start", json=start_payload, headers=researcher_headers
+    )
     assert start_res.status_code == 200
     start_data = start_res.json()
 
@@ -63,7 +68,11 @@ def test_api_research_workflow_lifecycle():
         "target_sections": ["TCO & Cloud Cost Projection"],
         "sync": True,
     }
-    rev_res = client.post(f"/api/research/review/{thread_id}", json=revision_payload, headers=researcher_headers)
+    rev_res = client.post(
+        f"/api/research/review/{thread_id}",
+        json=revision_payload,
+        headers=researcher_headers,
+    )
     assert rev_res.status_code == 200
     rev_data = rev_res.json()
     sections = rev_data["draft_report"]["sections"]
@@ -77,7 +86,11 @@ def test_api_research_workflow_lifecycle():
         "target_sections": [],
         "sync": True,
     }
-    appr_res = client.post(f"/api/research/review/{thread_id}", json=approve_payload, headers=reviewer_headers)
+    appr_res = client.post(
+        f"/api/research/review/{thread_id}",
+        json=approve_payload,
+        headers=reviewer_headers,
+    )
     assert appr_res.status_code == 200
     appr_data = appr_res.json()
     assert appr_data["status"] == "completed"
@@ -90,7 +103,9 @@ def test_api_research_workflow_lifecycle():
     assert len(dl_res.content) > 500
 
     # 6. Download generated Word document (.docx)
-    dl_docx_res = client.get(f"/api/research/download/{thread_id}?format=docx", headers=viewer_headers)
+    dl_docx_res = client.get(
+        f"/api/research/download/{thread_id}?format=docx", headers=viewer_headers
+    )
     assert dl_docx_res.status_code == 200
     assert "wordprocessingml" in dl_docx_res.headers["content-type"]
     assert len(dl_docx_res.content) > 500
@@ -99,7 +114,10 @@ def test_api_research_workflow_lifecycle():
 def test_api_research_not_found():
     """Verify 404 response for non-existent thread."""
     token = get_token_for("viewer@antigravity.ai", "Viewer@123")
-    response = client.get("/api/research/status/non_existent_thread_xyz", headers={"Authorization": f"Bearer {token}"})
+    response = client.get(
+        "/api/research/status/non_existent_thread_xyz",
+        headers={"Authorization": f"Bearer {token}"},
+    )
     assert response.status_code == 404
 
 
@@ -120,7 +138,9 @@ def test_api_async_background_task_and_polling():
     assert "status_url" in data
 
     # Poll status immediately
-    status_res = client.get(f"/api/research/status/{data['thread_id']}", headers=headers)
+    status_res = client.get(
+        f"/api/research/status/{data['thread_id']}", headers=headers
+    )
     assert status_res.status_code == 200
     status_data = status_res.json()
     assert status_data["thread_id"] == data["thread_id"]

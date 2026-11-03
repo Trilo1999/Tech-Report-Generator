@@ -53,7 +53,9 @@ def get_role(
     return service.get_role(role_id=role_id, role_ids=payload.role_ids)
 
 
-@router.post("/create_role", response_model=RoleResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/create_role", response_model=RoleResponse, status_code=status.HTTP_201_CREATED
+)
 def create_role(
     request: RoleCreate,
     payload: TokenPayload = Depends(get_current_user_payload),

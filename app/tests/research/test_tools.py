@@ -3,16 +3,17 @@ Comprehensive test suite for the 5 research, analytical, and export tools.
 """
 
 from pathlib import Path
+
 import pytest
-from pypdf import PdfReader
 from docx import Document
+from pypdf import PdfReader
 
 from app.tools import (
-    search_internal_documents,
-    search_external_sources,
     analyze_csv,
     calculate_cost,
     generate_report,
+    search_external_sources,
+    search_internal_documents,
 )
 
 
@@ -21,7 +22,9 @@ from app.tools import (
 # ────────────────────────────────────────────────────────────
 def test_search_internal_documents_basic():
     """Verify semantic retrieval against Qdrant collection."""
-    results = search_internal_documents(query="How does PostgreSQL handle multi-tenant isolation?", limit=3)
+    results = search_internal_documents(
+        query="How does PostgreSQL handle multi-tenant isolation?", limit=3
+    )
     assert len(results) > 0
     top = results[0]
 
@@ -82,7 +85,9 @@ def test_search_external_sources_relevance():
 
 def test_search_external_sources_reliability_filter():
     """Verify min_reliability filtering."""
-    high_rel_results = search_external_sources(query="compliance sovereignty", min_reliability=0.90)
+    high_rel_results = search_external_sources(
+        query="compliance sovereignty", min_reliability=0.90
+    )
     for r in high_rel_results:
         assert r["reliability_score"] >= 0.90
 
@@ -225,19 +230,51 @@ def test_generate_report_pdf(tmp_path):
             "Strategic Recommendation": "PostgreSQL is recommended for ACID and cost compliance.",
         },
         "benchmark_summary": {
-            "PostgreSQL": {"read": {"mean_latency_ms": 14.0, "p95_latency_ms": 18.4, "mean_throughput_ops_sec": 4350}},
-            "MongoDB": {"read": {"mean_latency_ms": 10.6, "p95_latency_ms": 15.1, "mean_throughput_ops_sec": 5050}},
+            "PostgreSQL": {
+                "read": {
+                    "mean_latency_ms": 14.0,
+                    "p95_latency_ms": 18.4,
+                    "mean_throughput_ops_sec": 4350,
+                }
+            },
+            "MongoDB": {
+                "read": {
+                    "mean_latency_ms": 10.6,
+                    "p95_latency_ms": 15.1,
+                    "mean_throughput_ops_sec": 5050,
+                }
+            },
         },
-        "unsupported_claims": ["Multi-region replication takes < 50ms without active geo-sharding"],
+        "unsupported_claims": [
+            "Multi-region replication takes < 50ms without active geo-sharding"
+        ],
         "cited_sources": [
-            {"source_id": "QDR-01", "title": "database_comparison.pdf", "source_type": "Internal Document"},
-            {"source_id": "CSV-01", "title": "benchmark_results.csv", "source_type": "Tabular Benchmark"},
-            {"source_id": "COST-01", "title": "cloud_pricing.json", "source_type": "Pricing Calculator"},
-            {"source_id": "EXT-01", "title": "Analyst Report 2024", "url": "https://example.com/analyst"},
+            {
+                "source_id": "QDR-01",
+                "title": "database_comparison.pdf",
+                "source_type": "Internal Document",
+            },
+            {
+                "source_id": "CSV-01",
+                "title": "benchmark_results.csv",
+                "source_type": "Tabular Benchmark",
+            },
+            {
+                "source_id": "COST-01",
+                "title": "cloud_pricing.json",
+                "source_type": "Pricing Calculator",
+            },
+            {
+                "source_id": "EXT-01",
+                "title": "Analyst Report 2024",
+                "url": "https://example.com/analyst",
+            },
         ],
     }
 
-    pdf_path = generate_report(mock_content, format="pdf", output_filename="test_report_eval.pdf")
+    pdf_path = generate_report(
+        mock_content, format="pdf", output_filename="test_report_eval.pdf"
+    )
     assert Path(pdf_path).is_file()
     assert Path(pdf_path).stat().st_size > 1000  # Non-trivial PDF binary
 
@@ -263,7 +300,9 @@ def test_generate_report_docx():
         "cited_sources": [{"source_id": "QDR-01", "title": "Internal Doc"}],
     }
 
-    docx_path = generate_report(mock_content, format="docx", output_filename="test_report_eval.docx")
+    docx_path = generate_report(
+        mock_content, format="docx", output_filename="test_report_eval.docx"
+    )
     assert Path(docx_path).is_file()
     assert Path(docx_path).stat().st_size > 500
 

@@ -8,16 +8,14 @@ Each sub-agent has a dedicated responsibility and binds specific LangChain tools
 - drafting_agent: Binds generate_report_tool and report synthesis logic.
 """
 
-from datetime import datetime, timezone
 import os
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from app.agents.graph.nodes import (
-    draft_report as base_draft_report,
-    get_llm,
-)
+from app.agents.graph.nodes import draft_report as base_draft_report
+from app.agents.graph.nodes import get_llm
 from app.agents.graph.state import EvidenceItem, ResearchState
 from app.tools.cost_calculator_tool import calculate_cost_tool
 from app.tools.external_search_tool import search_external_sources_tool
@@ -32,13 +30,19 @@ def internal_research_agent(state: ResearchState) -> Dict[str, Any]:
     formulates optimal queries, and executes tool calls via llm.bind_tools.
     """
     existing_evidence = state.get("evidence", [])
-    existing_ids = {item.get("source_id") for item in existing_evidence if isinstance(item, dict)}
+    existing_ids = {
+        item.get("source_id") for item in existing_evidence if isinstance(item, dict)
+    }
 
     topic = state.get("topic", "Comparative Technology Evaluation")
     iteration = state.get("iteration_count", 0)
     missing_gaps = state.get("missing_gaps", [])
 
-    queries = missing_gaps[:3] if (iteration > 0 and missing_gaps) else state.get("subquestions", [])[:4]
+    queries = (
+        missing_gaps[:3]
+        if (iteration > 0 and missing_gaps)
+        else state.get("subquestions", [])[:4]
+    )
     if not queries:
         queries = [state.get("topic", "Database architecture guidelines")]
 
@@ -61,7 +65,9 @@ def internal_research_agent(state: ResearchState) -> Dict[str, Any]:
             )
             response = llm_with_tools.invoke(
                 [
-                    SystemMessage(content="You are an autonomous internal documentation research agent."),
+                    SystemMessage(
+                        content="You are an autonomous internal documentation research agent."
+                    ),
                     HumanMessage(content=prompt),
                 ]
             )
@@ -70,7 +76,9 @@ def internal_research_agent(state: ResearchState) -> Dict[str, Any]:
                 for tc in response.tool_calls:
                     if tc.get("name") == "search_internal_documents":
                         args = tc.get("args", {})
-                        executed_calls.append({"tool": "search_internal_documents", "args": args})
+                        executed_calls.append(
+                            {"tool": "search_internal_documents", "args": args}
+                        )
                         tool_res = search_internal_documents_tool.invoke(args)
                         tool_invocations += 1
                         if isinstance(tool_res, list):
@@ -82,9 +90,13 @@ def internal_research_agent(state: ResearchState) -> Dict[str, Any]:
                                         EvidenceItem(
                                             source_id=sid,
                                             source_type="internal_qdrant",
-                                            title=res.get("title", f"Internal Document [{sid}]"),
+                                            title=res.get(
+                                                "title", f"Internal Document [{sid}]"
+                                            ),
                                             content=res.get("content", ""),
-                                            reliability_score=float(res.get("reliability_score", 0.95)),
+                                            reliability_score=float(
+                                                res.get("reliability_score", 0.95)
+                                            ),
                                             metadata=res.get("metadata", {}),
                                         )
                                     )
@@ -92,10 +104,14 @@ def internal_research_agent(state: ResearchState) -> Dict[str, Any]:
             pass
 
     # 2. Deterministic Fallback (offline mode, tests, or fallback if LLM chose not to search)
-    if not items and (os.getenv("MOCK_LLM", "false").lower() == "true" or not llm_autonomous):
+    if not items and (
+        os.getenv("MOCK_LLM", "false").lower() == "true" or not llm_autonomous
+    ):
         for q in queries:
             try:
-                tool_res = search_internal_documents_tool.invoke({"query": q, "limit": 2})
+                tool_res = search_internal_documents_tool.invoke(
+                    {"query": q, "limit": 2}
+                )
                 tool_invocations += 1
                 if isinstance(tool_res, list):
                     for res in tool_res:
@@ -106,9 +122,13 @@ def internal_research_agent(state: ResearchState) -> Dict[str, Any]:
                                 EvidenceItem(
                                     source_id=sid,
                                     source_type="internal_qdrant",
-                                    title=res.get("title", f"Internal Document [{sid}]"),
+                                    title=res.get(
+                                        "title", f"Internal Document [{sid}]"
+                                    ),
                                     content=res.get("content", ""),
-                                    reliability_score=float(res.get("reliability_score", 0.95)),
+                                    reliability_score=float(
+                                        res.get("reliability_score", 0.95)
+                                    ),
                                     metadata=res.get("metadata", {}),
                                 )
                             )
@@ -141,13 +161,19 @@ def external_research_agent(state: ResearchState) -> Dict[str, Any]:
     formulates optimal queries, and executes tool calls via llm.bind_tools.
     """
     existing_evidence = state.get("evidence", [])
-    existing_ids = {item.get("source_id") for item in existing_evidence if isinstance(item, dict)}
+    existing_ids = {
+        item.get("source_id") for item in existing_evidence if isinstance(item, dict)
+    }
 
     topic = state.get("topic", "Comparative Technology Evaluation")
     iteration = state.get("iteration_count", 0)
     missing_gaps = state.get("missing_gaps", [])
 
-    queries = missing_gaps[:3] if (iteration > 0 and missing_gaps) else state.get("subquestions", [])[:4]
+    queries = (
+        missing_gaps[:3]
+        if (iteration > 0 and missing_gaps)
+        else state.get("subquestions", [])[:4]
+    )
     if not queries:
         queries = [state.get("topic", "Technical comparison research")]
 
@@ -170,7 +196,9 @@ def external_research_agent(state: ResearchState) -> Dict[str, Any]:
             )
             response = llm_with_tools.invoke(
                 [
-                    SystemMessage(content="You are an autonomous external research agent."),
+                    SystemMessage(
+                        content="You are an autonomous external research agent."
+                    ),
                     HumanMessage(content=prompt),
                 ]
             )
@@ -179,7 +207,9 @@ def external_research_agent(state: ResearchState) -> Dict[str, Any]:
                 for tc in response.tool_calls:
                     if tc.get("name") == "search_external_sources":
                         args = tc.get("args", {})
-                        executed_calls.append({"tool": "search_external_sources", "args": args})
+                        executed_calls.append(
+                            {"tool": "search_external_sources", "args": args}
+                        )
                         tool_res = search_external_sources_tool.invoke(args)
                         tool_invocations += 1
                         if isinstance(tool_res, list):
@@ -191,9 +221,13 @@ def external_research_agent(state: ResearchState) -> Dict[str, Any]:
                                         EvidenceItem(
                                             source_id=sid,
                                             source_type="external_mock",
-                                            title=res.get("title", f"External Source [{sid}]"),
+                                            title=res.get(
+                                                "title", f"External Source [{sid}]"
+                                            ),
                                             content=res.get("content", ""),
-                                            reliability_score=float(res.get("reliability_score", 0.85)),
+                                            reliability_score=float(
+                                                res.get("reliability_score", 0.85)
+                                            ),
                                             metadata=res.get("metadata", {}),
                                         )
                                     )
@@ -201,7 +235,9 @@ def external_research_agent(state: ResearchState) -> Dict[str, Any]:
             pass
 
     # 2. Deterministic Fallback
-    if not items and (os.getenv("MOCK_LLM", "false").lower() == "true" or not llm_autonomous):
+    if not items and (
+        os.getenv("MOCK_LLM", "false").lower() == "true" or not llm_autonomous
+    ):
         for q in queries:
             try:
                 tool_res = search_external_sources_tool.invoke({"query": q, "limit": 2})
@@ -217,7 +253,9 @@ def external_research_agent(state: ResearchState) -> Dict[str, Any]:
                                     source_type="external_mock",
                                     title=res.get("title", f"External Source [{sid}]"),
                                     content=res.get("content", ""),
-                                    reliability_score=float(res.get("reliability_score", 0.85)),
+                                    reliability_score=float(
+                                        res.get("reliability_score", 0.85)
+                                    ),
                                     metadata=res.get("metadata", {}),
                                 )
                             )
@@ -297,7 +335,9 @@ def analytics_agent(state: ResearchState) -> Dict[str, Any]:
             )
             response = llm_with_tools.invoke(
                 [
-                    SystemMessage(content="You are an autonomous quantitative analytics agent."),
+                    SystemMessage(
+                        content="You are an autonomous quantitative analytics agent."
+                    ),
                     HumanMessage(content=prompt),
                 ]
             )
@@ -320,7 +360,10 @@ def analytics_agent(state: ResearchState) -> Dict[str, Any]:
             pass
 
     # 2. Complete Baseline Calculations (ensure all required metric dimensions exist)
-    if "summary_stats" not in calculations_data or "latency_percentiles" not in calculations_data:
+    if (
+        "summary_stats" not in calculations_data
+        or "latency_percentiles" not in calculations_data
+    ):
         try:
             summary_stats = analyze_csv_tool.invoke({"operation": "summary_stats"})
             percentiles = analyze_csv_tool.invoke({"operation": "latency_percentiles"})
@@ -365,7 +408,11 @@ def analytics_agent(state: ResearchState) -> Dict[str, Any]:
                     reliability_score=0.99,
                     metadata={
                         "operation": "multi_tier_benchmark",
-                        "metrics_computed": ["summary_stats", "latency_percentiles", "concurrency_scaling"],
+                        "metrics_computed": [
+                            "summary_stats",
+                            "latency_percentiles",
+                            "concurrency_scaling",
+                        ],
                     },
                 )
             )
@@ -419,7 +466,9 @@ def analytics_agent(state: ResearchState) -> Dict[str, Any]:
                 title=cost_title,
                 content=cost_summary,
                 reliability_score=1.00,
-                metadata=calculations_data.get("cost_projection", {}).get("parameters", {}),
+                metadata=calculations_data.get("cost_projection", {}).get(
+                    "parameters", {}
+                ),
             )
         )
 
@@ -456,8 +505,12 @@ def drafting_agent(state: ResearchState) -> Dict[str, Any]:
         "agent": "drafting_agent",
         "action": "synthesize_research_report",
         "tool_bound": "generate_report_tool",
-        "sections_drafted": list(draft_result.get("draft_report", {}).get("sections", {}).keys()),
-        "cited_sources_count": len(draft_result.get("draft_report", {}).get("cited_sources", [])),
+        "sections_drafted": list(
+            draft_result.get("draft_report", {}).get("sections", {}).keys()
+        ),
+        "cited_sources_count": len(
+            draft_result.get("draft_report", {}).get("cited_sources", [])
+        ),
         "unsupported_claims_count": len(draft_result.get("unsupported_claims", [])),
     }
 

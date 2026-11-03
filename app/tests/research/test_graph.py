@@ -127,7 +127,9 @@ def test_graph_compilation_and_nodes():
         "export_report",
     }
     actual_nodes = set(workflow.nodes.keys())
-    assert expected_nodes.issubset(actual_nodes), f"Missing nodes: {expected_nodes - actual_nodes}"
+    assert expected_nodes.issubset(
+        actual_nodes
+    ), f"Missing nodes: {expected_nodes - actual_nodes}"
 
     # Verify graph compiles successfully
     compiled = create_research_graph()

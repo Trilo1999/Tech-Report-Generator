@@ -78,7 +78,9 @@ class RoleRepository(BaseRepository[Role]):
         Returns:
             Updated Role instance or None if not found.
         """
-        return self.update(role_id, updated_by=updated_by, name=name, description=description)
+        return self.update(
+            role_id, updated_by=updated_by, name=name, description=description
+        )
 
     def delete_role(self, role_id: str) -> Optional[Role]:
         """Delete a role.

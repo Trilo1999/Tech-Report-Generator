@@ -1,18 +1,18 @@
 """Unit tests for configuration and environment settings."""
 
 from app.config.env_config import (
-    settings,
-    PROJECT_ROOT,
-    DATA_DIR,
-    SAMPLE_DATA_DIR,
-    REPORTS_DIR,
+    ARCHITECTURE_GUIDELINES_MD,
     BENCHMARK_CSV,
     CLOUD_PRICING_JSON,
-    RESEARCH_SOURCES_JSON,
-    ARCHITECTURE_GUIDELINES_MD,
+    DATA_DIR,
     DATABASE_COMPARISON_PDF,
     MAX_RESEARCH_ITERATIONS,
     MIN_SUBQUESTIONS,
+    PROJECT_ROOT,
+    REPORTS_DIR,
+    RESEARCH_SOURCES_JSON,
+    SAMPLE_DATA_DIR,
+    settings,
 )
 
 

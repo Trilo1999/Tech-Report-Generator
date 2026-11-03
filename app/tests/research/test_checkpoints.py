@@ -3,7 +3,11 @@ Integration and persistence tests for Human-in-the-Loop checkpointing and resump
 """
 
 from app.agents.graph.builder import create_research_graph
-from app.agents.graph.checkpoints import get_checkpointer, get_thread_state, resume_workflow
+from app.agents.graph.checkpoints import (
+    get_checkpointer,
+    get_thread_state,
+    resume_workflow,
+)
 
 
 def test_checkpointer_initialization():
@@ -31,7 +35,9 @@ def test_hitl_pause_and_state_inspection():
     snapshot = get_thread_state(thread_id, checkpointer=checkpointer)
     assert snapshot is not None
     assert "human_review" in snapshot["next"]
-    assert snapshot["values"]["topic"] == "PostgreSQL vs MongoDB Architecture Evaluation"
+    assert (
+        snapshot["values"]["topic"] == "PostgreSQL vs MongoDB Architecture Evaluation"
+    )
 
 
 def test_hitl_resume_approved_path():
@@ -75,7 +81,9 @@ def test_hitl_resume_revision_cycle():
         "feedback_notes": "Include 36-month reserved instance pricing.",
         "target_sections": ["TCO & Cloud Cost Projection"],
     }
-    revised_state = resume_workflow(thread_id, revision_payload, checkpointer=checkpointer)
+    revised_state = resume_workflow(
+        thread_id, revision_payload, checkpointer=checkpointer
+    )
 
     # Should have updated section and paused AGAIN at human_review
     assert revised_state["status"] == "drafted" or revised_state["status"] == "revised"
@@ -91,7 +99,9 @@ def test_hitl_resume_revision_cycle():
         "feedback_notes": "Revision verified.",
         "target_sections": [],
     }
-    final_state = resume_workflow(thread_id, approval_payload, checkpointer=checkpointer)
+    final_state = resume_workflow(
+        thread_id, approval_payload, checkpointer=checkpointer
+    )
 
     assert final_state["status"] == "completed"
     assert final_state.get("final_report_path") is not None

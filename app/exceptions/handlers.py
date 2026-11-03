@@ -9,7 +9,9 @@ from app.config.log_config import logger
 from app.exceptions.domain import AppError
 
 
-async def request_validation_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+async def request_validation_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
     """Handle Pydantic request validation errors (422).
 
     Args:
@@ -32,7 +34,9 @@ async def request_validation_handler(request: Request, exc: RequestValidationErr
     )
 
 
-async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+async def http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+) -> JSONResponse:
     """Handle FastAPI/Starlette HTTPException.
 
     Args:
@@ -99,7 +103,9 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     )
 
 
-async def cancelled_error_handler(request: Request, exc: asyncio.CancelledError) -> None:
+async def cancelled_error_handler(
+    request: Request, exc: asyncio.CancelledError
+) -> None:
     """Re-raise CancelledError so it is not logged as an unhandled exception.
 
     Args:

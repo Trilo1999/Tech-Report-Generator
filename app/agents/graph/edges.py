@@ -4,11 +4,13 @@ from typing import Literal
 
 from langgraph.graph import END
 
-from app.config.env_config import MAX_RESEARCH_ITERATIONS
 from app.agents.graph.state import ResearchState
+from app.config.env_config import MAX_RESEARCH_ITERATIONS
 
 
-def route_sufficiency(state: ResearchState) -> Literal["gather_evidence", "draft_report"]:
+def route_sufficiency(
+    state: ResearchState,
+) -> Literal["gather_evidence", "draft_report"]:
     """
     Evaluate evidence sufficiency and enforce loop boundaries.
 

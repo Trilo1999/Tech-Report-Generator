@@ -7,11 +7,11 @@ relevance-weighted reliability scores, and returns standardized [EXT-xx] source 
 
 import json
 import os
-from pathlib import Path
 import re
-from typing import Any, Dict, List, Optional, Set
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Type
 
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
 
 from app.config.env_config import RESEARCH_SOURCES_JSON
@@ -56,7 +56,11 @@ STOPWORDS: Set[str] = {
 class ExternalSearchEngine:
     """Object-oriented search engine for external analyst sources, whitepapers, and live web research."""
 
-    def __init__(self, default_sources_path: Optional[Path] = None, stopwords: Optional[Set[str]] = None):
+    def __init__(
+        self,
+        default_sources_path: Optional[Path] = None,
+        stopwords: Optional[Set[str]] = None,
+    ):
         self.default_sources_path = default_sources_path or RESEARCH_SOURCES_JSON
         self.stopwords = stopwords or STOPWORDS
 
@@ -69,7 +73,9 @@ class ExternalSearchEngine:
         """Load external research sources registry."""
         path = sources_path or self.default_sources_path
         if not Path(path).is_file():
-            raise FileNotFoundError(f"External research sources registry not found: {path}")
+            raise FileNotFoundError(
+                f"External research sources registry not found: {path}"
+            )
 
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -83,9 +89,16 @@ class ExternalSearchEngine:
         if os.getenv("MOCK_LLM", "false").lower() == "true":
             return []
 
-        from app.config.env_config import HIVE_BASE_URL, HIVE_MODEL_NAME, HIVE_SECRET_KEY
+        from app.config.env_config import (
+            HIVE_BASE_URL,
+            HIVE_MODEL_NAME,
+            HIVE_SECRET_KEY,
+        )
 
-        if not HIVE_SECRET_KEY or HIVE_SECRET_KEY.strip() in ("", "your_hive_secret_key_here"):
+        if not HIVE_SECRET_KEY or HIVE_SECRET_KEY.strip() in (
+            "",
+            "your_hive_secret_key_here",
+        ):
             return []
 
         try:
@@ -137,7 +150,9 @@ class ExternalSearchEngine:
                         "content": src.get("snippet", src.get("description", "")),
                         "url": src.get("url", "https://hive.ai/research"),
                         "author": src.get("author", "Hive AI Web Research"),
-                        "publication": src.get("publication", "External Technical Whitepaper"),
+                        "publication": src.get(
+                            "publication", "External Technical Whitepaper"
+                        ),
                         "date": src.get("date", "2025-01-01"),
                         "reliability_score": float(src.get("reliability_score", 0.92)),
                         "relevance_score": 0.98,
@@ -220,17 +235,25 @@ class ExternalSearchEngine:
 
         subject_coverage = 1.0
         if subject_terms:
-            doc_texts = [f"{s.get('title', '')} {s.get('snippet', '')}".lower() for s in sources]
-            matched_terms = sum(1 for term in subject_terms if any(term in dt for dt in doc_texts))
+            doc_texts = [
+                f"{s.get('title', '')} {s.get('snippet', '')}".lower() for s in sources
+            ]
+            matched_terms = sum(
+                1 for term in subject_terms if any(term in dt for dt in doc_texts)
+            )
             subject_coverage = matched_terms / len(subject_terms)
 
-        if (len(scored_sources) == 0 or subject_coverage < 0.5) and os.getenv("MOCK_LLM", "false").lower() != "true":
+        if (len(scored_sources) == 0 or subject_coverage < 0.5) and os.getenv(
+            "MOCK_LLM", "false"
+        ).lower() != "true":
             hive_results = self.search_hive_ai(query=query, limit=limit)
             if hive_results:
                 return hive_results
 
         results: List[Dict[str, Any]] = []
-        for idx, (c_score, rel, rel_score, src) in enumerate(scored_sources[:limit], start=1):
+        for idx, (c_score, rel, rel_score, src) in enumerate(
+            scored_sources[:limit], start=1
+        ):
             source_id = src.get("id") or f"EXT-{idx:02d}"
             results.append(
                 {
@@ -288,4 +311,28 @@ def search_external_sources_tool(
     Search external analyst articles, benchmark publications, and cloud architecture whitepapers.
     Returns ranked citations tagged with [EXT-xx] identifiers.
     """
-    return default_external_search_engine.search(query=query, min_reliability=min_reliability, limit=limit)
+    return default_external_search_engine.search(
+        query=query, min_reliability=min_reliability, limit=limit
+    )
+
+
+class ExternalSearchTool(BaseTool):
+    """Tool that searches external analyst articles, benchmarks, and whitepapers."""
+
+    name: str = "search_external_sources"
+    description: str = (
+        "Search external analyst articles, benchmark publications, and cloud architecture whitepapers. "
+        "Returns ranked citations tagged with [EXT-xx] identifiers."
+    )
+    args_schema: Type[BaseModel] = ExternalSearchInput
+
+    def _run(
+        self,
+        query: str,
+        min_reliability: float = 0.5,
+        limit: int = 4,
+    ) -> List[Dict[str, Any]]:
+        """Execute external research search."""
+        return default_external_search_engine.search(
+            query=query, min_reliability=min_reliability, limit=limit
+        )

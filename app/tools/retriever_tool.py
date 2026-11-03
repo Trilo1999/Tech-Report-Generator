@@ -10,7 +10,9 @@ from app.services.core_services.retrieval_service import vector_retriever
 class RetrieverToolInput(BaseModel):
     """Input schema for the retriever tool."""
 
-    query: str = Field(description="The query to retrieve documents from the vector database")
+    query: str = Field(
+        description="The query to retrieve documents from the vector database"
+    )
 
 
 class RetrieverTool(BaseTool):

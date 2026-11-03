@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.security import HTTPAuthorizationCredentials
 
 from app.agents.graph.checkpoints import get_thread_state
+from app.exceptions.domain import NotFoundError
 from app.services.iam_services.research_auth import decode_access_token, get_user_by_id
 
 
@@ -23,7 +24,11 @@ class ReportService:
         auth_credentials: Optional[HTTPAuthorizationCredentials] = None,
     ) -> FileResponse:
         """Download the final exported report in PDF or Microsoft Word (.docx) format."""
-        raw_token = auth_credentials.credentials if (auth_credentials and auth_credentials.credentials) else token
+        raw_token = (
+            auth_credentials.credentials
+            if (auth_credentials and auth_credentials.credentials)
+            else token
+        )
         if not raw_token:
             raise HTTPException(
                 status_code=401,
@@ -46,17 +51,18 @@ class ReportService:
 
         snapshot = get_thread_state(thread_id)
         if not snapshot:
-            raise HTTPException(status_code=404, detail=f"Thread '{thread_id}' not found.")
+            raise NotFoundError(f"Thread '{thread_id}' not found.")
 
         report_path_str = snapshot["values"].get("final_report_path")
         if not report_path_str:
             raise HTTPException(
-                status_code=400, detail="No exported report found. The proposal must be approved first."
+                status_code=400,
+                detail="No exported report found. The proposal must be approved first.",
             )
 
         report_path = Path(report_path_str)
         if not report_path.is_file():
-            raise HTTPException(status_code=404, detail="Exported report file not found on disk.")
+            raise NotFoundError("Exported report file not found on disk.")
 
         target_format = format.lower().strip()
         if target_format in ("docx", "doc", "word"):

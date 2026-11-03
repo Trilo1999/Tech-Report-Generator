@@ -108,7 +108,9 @@ class AuthService:
                     created_by=user.id,
                 )
 
-            users_component = self.component_repo.get_component_by_uri(USER_COMPONENT_URI)
+            users_component = self.component_repo.get_component_by_uri(
+                USER_COMPONENT_URI
+            )
             if not users_component:
                 users_component = self.component_repo.create_component(
                     name="users",
@@ -116,7 +118,9 @@ class AuthService:
                     created_by=user.id,
                 )
 
-            roles_component = self.component_repo.get_component_by_uri(ROLE_COMPONENT_URI)
+            roles_component = self.component_repo.get_component_by_uri(
+                ROLE_COMPONENT_URI
+            )
             if not roles_component:
                 roles_component = self.component_repo.create_component(
                     name="roles",

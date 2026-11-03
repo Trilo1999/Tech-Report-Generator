@@ -29,7 +29,9 @@ def test_paths_from_working_dir(clear_env, set_env_vars):
     assert settings.WORKING_PROJECT_DIR == expected_project_dir
     assert settings.DB_PATH == os.path.join(str(set_env_vars), "sqlite_data", "app.db")
     assert settings.LOG_DIR == os.path.join(expected_project_dir, "logs")
-    assert settings.UPLOAD_DIR == os.path.join(expected_project_dir, "static", "uploads")
+    assert settings.UPLOAD_DIR == os.path.join(
+        expected_project_dir, "static", "uploads"
+    )
 
 
 def test_defaults_when_missing(clear_env, monkeypatch, tmp_path):

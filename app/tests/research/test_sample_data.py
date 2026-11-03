@@ -1,14 +1,16 @@
 """Unit tests to validate integrity and schema of all 5 synthetic sample datasets."""
 
 import json
+
 import pandas as pd
 from pypdf import PdfReader
+
 from app.config.env_config import (
+    ARCHITECTURE_GUIDELINES_MD,
     BENCHMARK_CSV,
     CLOUD_PRICING_JSON,
-    RESEARCH_SOURCES_JSON,
-    ARCHITECTURE_GUIDELINES_MD,
     DATABASE_COMPARISON_PDF,
+    RESEARCH_SOURCES_JSON,
 )
 
 
@@ -16,7 +18,9 @@ def test_database_comparison_pdf_validity():
     """Verify that database_comparison.pdf exists, is non-empty, and has multiple readable pages."""
     assert DATABASE_COMPARISON_PDF.is_file()
     reader = PdfReader(str(DATABASE_COMPARISON_PDF))
-    assert len(reader.pages) >= 2, "PDF should contain multiple pages of comparative analysis"
+    assert (
+        len(reader.pages) >= 2
+    ), "PDF should contain multiple pages of comparative analysis"
 
     # Verify key architectural terminology appears in extracted text
     full_text = " ".join([page.extract_text() or "" for page in reader.pages])
@@ -32,7 +36,14 @@ def test_benchmark_results_csv_validity():
     df = pd.read_csv(BENCHMARK_CSV)
 
     # Check required columns
-    expected_cols = {"database", "operation", "latency_ms", "throughput_ops_sec", "concurrency_level", "data_size_gb"}
+    expected_cols = {
+        "database",
+        "operation",
+        "latency_ms",
+        "throughput_ops_sec",
+        "concurrency_level",
+        "data_size_gb",
+    }
     assert expected_cols.issubset(set(df.columns))
 
     # Check row counts and null values
@@ -42,8 +53,20 @@ def test_benchmark_results_csv_validity():
 
     # Check database coverage
     databases = set(df["database"].unique())
-    required_entities = {"PostgreSQL", "MongoDB", "React", "Angular", "Python", "Java", "AWS", "GCP", "Azure"}
-    assert required_entities.issubset(databases), f"Missing entities: {required_entities - databases}"
+    required_entities = {
+        "PostgreSQL",
+        "MongoDB",
+        "React",
+        "Angular",
+        "Python",
+        "Java",
+        "AWS",
+        "GCP",
+        "Azure",
+    }
+    assert required_entities.issubset(
+        databases
+    ), f"Missing entities: {required_entities - databases}"
 
     # Validate numeric realism
     assert (df["latency_ms"] > 0).all()
@@ -61,7 +84,17 @@ def test_cloud_pricing_json_validity():
         assert key in pricing
 
     # Verify all 9 preset tech options are represented in compute, storage, backup, support
-    all_techs = ["postgresql", "mongodb", "react", "angular", "python", "java", "aws", "gcp", "azure"]
+    all_techs = [
+        "postgresql",
+        "mongodb",
+        "react",
+        "angular",
+        "python",
+        "java",
+        "aws",
+        "gcp",
+        "azure",
+    ]
     for tech in all_techs:
         assert tech in pricing["compute"], f"Missing compute pricing for {tech}"
         assert pricing["compute"][tech]["price_per_hour"] > 0

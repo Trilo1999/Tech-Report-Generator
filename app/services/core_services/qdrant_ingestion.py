@@ -6,10 +6,10 @@ sliding-window chunking, generates 384-dimensional dense vectors with all-MiniLM
 and indexes them into Qdrant with searchable metadata payloads.
 """
 
-from pathlib import Path
 import re
-from typing import Any, Dict, List, Optional
 import uuid
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from fastembed import TextEmbedding
 from pypdf import PdfReader
@@ -59,8 +59,12 @@ class QdrantDocumentIngestor:
         """Return a cached instance of the FastEmbed model (all-MiniLM-L6-v2)."""
         if self._embedding_model is None:
             model_name = f"sentence-transformers/{EMBEDDING_MODEL_NAME}"
-            cache_dir_str = str(FASTEMBED_CACHE_DIR) if FASTEMBED_CACHE_DIR.exists() else None
-            self._embedding_model = TextEmbedding(model_name=model_name, cache_dir=cache_dir_str)
+            cache_dir_str = (
+                str(FASTEMBED_CACHE_DIR) if FASTEMBED_CACHE_DIR.exists() else None
+            )
+            self._embedding_model = TextEmbedding(
+                model_name=model_name, cache_dir=cache_dir_str
+            )
         return self._embedding_model
 
     def get_client(self, reconnect: bool = False) -> QdrantClient:
@@ -74,7 +78,9 @@ class QdrantDocumentIngestor:
 
         if not QDRANT_PREFER_EMBEDDED:
             try:
-                client = QdrantClient(url=QDRANT_URL, timeout=3.0, check_compatibility=False)
+                client = QdrantClient(
+                    url=QDRANT_URL, timeout=3.0, check_compatibility=False
+                )
                 client.get_collections()
                 self._qdrant_client = client
                 return self._qdrant_client
@@ -82,10 +88,14 @@ class QdrantDocumentIngestor:
                 pass
 
         QDRANT_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
-        self._qdrant_client = QdrantClient(path=str(QDRANT_STORAGE_DIR), check_compatibility=False)
+        self._qdrant_client = QdrantClient(
+            path=str(QDRANT_STORAGE_DIR), check_compatibility=False
+        )
         return self._qdrant_client
 
-    def chunk_text(self, text: str, chunk_size: Optional[int] = None, overlap: Optional[int] = None) -> List[str]:
+    def chunk_text(
+        self, text: str, chunk_size: Optional[int] = None, overlap: Optional[int] = None
+    ) -> List[str]:
         """Split text into overlapping windows to preserve context across boundaries."""
         eff_chunk_size = chunk_size if chunk_size is not None else self.chunk_size
         eff_overlap = overlap if overlap is not None else self.chunk_overlap
@@ -156,7 +166,9 @@ class QdrantDocumentIngestor:
                         parent_section = top_match.group(1).strip()
                         current_section = parent_section
                     elif sub_match:
-                        current_section = f"{parent_section} > {sub_match.group(1).strip()}"
+                        current_section = (
+                            f"{parent_section} > {sub_match.group(1).strip()}"
+                        )
                 else:
                     current_text.append(line_str)
 
@@ -292,7 +304,9 @@ class QdrantDocumentIngestor:
     def ingest(self, force_recreate: bool = True) -> int:
         """Full ingestion pipeline for sample documentation."""
         client = self.get_client()
-        self.create_or_recreate_collection(client, collection_name=self.collection_name, force_recreate=force_recreate)
+        self.create_or_recreate_collection(
+            client, collection_name=self.collection_name, force_recreate=force_recreate
+        )
 
         pdf_sections = self.parse_pdf(DATABASE_COMPARISON_PDF)
         md_sections = self.parse_markdown(ARCHITECTURE_GUIDELINES_MD)
@@ -300,7 +314,9 @@ class QdrantDocumentIngestor:
         all_chunks_metadata: List[Dict[str, Any]] = []
 
         for sec in pdf_sections:
-            chunks = self.chunk_text(sec["text"], chunk_size=self.chunk_size, overlap=self.chunk_overlap)
+            chunks = self.chunk_text(
+                sec["text"], chunk_size=self.chunk_size, overlap=self.chunk_overlap
+            )
             for i, chunk in enumerate(chunks):
                 all_chunks_metadata.append(
                     {
@@ -314,7 +330,9 @@ class QdrantDocumentIngestor:
                 )
 
         for sec in md_sections:
-            chunks = self.chunk_text(sec["text"], chunk_size=self.chunk_size, overlap=self.chunk_overlap)
+            chunks = self.chunk_text(
+                sec["text"], chunk_size=self.chunk_size, overlap=self.chunk_overlap
+            )
             for i, chunk in enumerate(chunks):
                 all_chunks_metadata.append(
                     {
@@ -336,7 +354,9 @@ class QdrantDocumentIngestor:
 
         points: List[PointStruct] = []
         for i, (meta, vector) in enumerate(zip(all_chunks_metadata, embeddings)):
-            unique_key = f"{meta['source_file']}_{meta['section']}_{meta['chunk_index']}_{i}"
+            unique_key = (
+                f"{meta['source_file']}_{meta['section']}_{meta['chunk_index']}_{i}"
+            )
             point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, unique_key))
             points.append(
                 PointStruct(
