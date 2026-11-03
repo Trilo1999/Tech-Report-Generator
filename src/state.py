@@ -35,11 +35,27 @@ class DraftReport(TypedDict):
     unsupported_claims: List[str]  # Claims made without source backing
 
 
+class WorkerTask(TypedDict):
+    id: str
+    worker: str  # "internal_research_worker", "external_research_worker", "analytics_worker"
+    description: str
+    target_dimension: str
+    query: str
+
+
+def merge_calculations(a: Optional[Dict[str, Any]], b: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Reducer to merge calculation dictionaries across parallel orchestrator workers."""
+    merged = dict(a) if a else {}
+    if b and isinstance(b, dict):
+        merged.update(b)
+    return merged
+
+
 class ResearchState(TypedDict):
     topic: str
     subquestions: List[str]
     evidence: Annotated[List[EvidenceItem], operator.add]  # Monoid accumulator across loops
-    calculations: Dict[str, Any]  # Structured numerical results
+    calculations: Annotated[Dict[str, Any], merge_calculations]  # Reducer merged dictionary
     iteration_count: int
     is_sufficient: bool
     missing_gaps: List[str]
@@ -60,8 +76,13 @@ class ResearchState(TypedDict):
         "rejected",
         "completed",
         "supervising",
+        "orchestrating",
     ]
     # Supervisor multi-agent orchestration & monitoring fields
     next_agent: NotRequired[Optional[str]]
     supervisor_notes: NotRequired[Optional[str]]
     subagent_history: NotRequired[Annotated[List[Dict[str, Any]], operator.add]]
+    # Orchestrator-Worker pattern fields
+    worker_tasks: NotRequired[List[WorkerTask]]
+    orchestrator_plan: NotRequired[Optional[str]]
+    current_task: NotRequired[Optional[Dict[str, Any]]]

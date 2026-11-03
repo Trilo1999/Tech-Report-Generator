@@ -1,6 +1,13 @@
 """LangGraph workflow definition — state, nodes, edges, and graph builder."""
 
-from src.graph.builder import build_research_graph, create_research_graph
+from src.graph.builder import (
+    build_multi_agent_graph,
+    build_orchestrator_worker_graph,
+    build_research_graph,
+    create_multi_agent_graph,
+    create_orchestrator_worker_graph,
+    create_research_graph,
+)
 from src.graph.edges import route_review, route_sufficiency
 from src.graph.nodes import (
     draft_report,
@@ -31,4 +38,8 @@ __all__ = [
     "route_review",
     "build_research_graph",
     "create_research_graph",
+    "build_multi_agent_graph",
+    "create_multi_agent_graph",
+    "build_orchestrator_worker_graph",
+    "create_orchestrator_worker_graph",
 ]
