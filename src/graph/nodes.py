@@ -316,6 +316,9 @@ def execute_calculations(state: ResearchState) -> Dict[str, Any]:
     elif "aws" in topic_lower or "gcp" in topic_lower:
         target_techs = ["aws", "gcp"]
         tech_labels = ("AWS", "GCP")
+    elif "rag" in topic_lower or "retrieval" in topic_lower:
+        target_techs = ["naive_rag", "advanced_rag"]
+        tech_labels = ("Naive RAG", "Advanced RAG")
     else:
         target_techs = ["postgresql", "mongodb"]
         tech_labels = ("PostgreSQL", "MongoDB")

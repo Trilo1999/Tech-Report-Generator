@@ -380,3 +380,36 @@ def test_multi_agent_graph_full_execution_approved():
         assert "external_research_agent" in agents_run
         assert "analytics_agent" in agents_run
         assert "drafting_agent" in agents_run
+
+
+def test_rag_pipeline_external_search_and_analytics():
+    """Verify that querying a novel topic like RAG pipelines retrieves external sources and executes RAG analytics."""
+    # 1. External Search
+    rag_sources = search_external_sources_tool.invoke(
+        {
+            "query": "RAG pipeline architecture chunking strategies and vector retrieval latency",
+            "limit": 3,
+        }
+    )
+    assert len(rag_sources) > 0
+    assert any("RAG" in s["title"] or "Vector" in s["title"] for s in rag_sources)
+
+    # 2. Analytics Agent for RAG
+    state: ResearchState = {
+        "topic": "Naive RAG vs Advanced RAG Architecture & TCO",
+        "subquestions": ["How do Naive and Advanced RAG compare in retrieval latency and cost?"],
+        "evidence": [],
+        "calculations": {},
+        "iteration_count": 0,
+        "is_sufficient": False,
+        "missing_gaps": [],
+        "draft_report": None,
+        "unsupported_claims": [],
+        "status": "planning",
+    }
+    analytics_result = analytics_agent(state)
+    assert analytics_result["status"] == "calculating"
+    assert "cost_projection" in analytics_result["calculations"]
+    breakdown = analytics_result["calculations"]["cost_projection"]["breakdown"]
+    assert "naive_rag" in breakdown
+    assert "advanced_rag" in breakdown

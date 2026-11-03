@@ -78,7 +78,12 @@ def determine_next_agent_deterministic(state: ResearchState) -> Dict[str, Any]:
         }
 
     # Pipeline progression: 1. Internal Documents
-    if manifest["internal"] == 0:
+    # If internal search was already attempted and yielded 0 matches (e.g. novel topic not in Qdrant KB),
+    # gracefully proceed to external web research rather than looping.
+    history = state.get("subagent_history", [])
+    internal_attempted = any(h.get("agent") == "internal_research_agent" for h in history if isinstance(h, dict))
+
+    if manifest["internal"] == 0 and not internal_attempted:
         return {
             "next_agent": "internal_research_agent",
             "reasoning": f"Evidence manifest lacks internal engineering guidelines (found {manifest['internal']}). Dispatching internal_research_agent.",
