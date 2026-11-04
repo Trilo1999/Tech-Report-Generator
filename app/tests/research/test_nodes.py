@@ -665,3 +665,74 @@ def test_all_ui_preset_topics_execute_and_have_data():
         # 3. External Search
         external_results = search_external_sources(topic, limit=2)
         assert len(external_results) > 0, f"No external sources for topic: {topic}"
+
+
+def test_sanitize_topic():
+    """Verify topic sanitization cleans conversational prompts and typos."""
+    from app.utils.core_utils.text_processing_utils import sanitize_topic
+
+    assert (
+        sanitize_topic(
+            "give me a report about building a multitenant saas based ecommerce patform"
+        )
+        == "Building a Multi-Tenant SaaS-Based E-Commerce Platform"
+    )
+    assert (
+        sanitize_topic("can you write a report on PostgreSQL vs MongoDB?")
+        == "PostgreSQL vs MongoDB"
+    )
+    assert (
+        sanitize_topic("please provide a technical research report on AWS vs Azure TCO")
+        == "AWS vs Azure TCO"
+    )
+
+
+def test_saas_ecommerce_report_structure_and_no_hallucinations():
+    """Verify multi-tenant SaaS e-commerce prompt generates tailored content without DB conflict leaks."""
+    from app.utils.core_utils.text_processing_utils import sanitize_topic
+
+    raw_topic = (
+        "give me a report about building a multitenant saas based ecommerce patform"
+    )
+    clean_topic = sanitize_topic(raw_topic)
+    assert clean_topic == "Building a Multi-Tenant SaaS-Based E-Commerce Platform"
+
+    state = {
+        "topic": raw_topic,
+        "subquestions": [
+            "How does multi-tenant data isolation scale?",
+            "What is the cloud infrastructure TCO?",
+            "What are optimal storefront caching strategies?",
+        ],
+        "evidence": [],
+        "calculations": {},
+    }
+
+    # 1. Calculation
+    calc_res = execute_calculations(state)
+    assert "cost_projection" in calc_res["calculations"]
+    evidence = calc_res["evidence"]
+    assert any(
+        "Multi-tier workload telemetry" in e.get("content", "") for e in evidence
+    )
+
+    # 2. Evaluation
+    eval_res = evaluate_evidence({**state, "evidence": evidence})
+    conflicts = eval_res.get("conflicting_evidence", [])
+    # Verify no MongoDB/PostgreSQL contradiction is injected into SaaS report
+    for c in conflicts:
+        assert "MongoDB" not in c.get("claim_a", "")
+        assert "MongoDB" not in c.get("claim_b", "")
+
+    # 3. Drafting
+    draft_res = draft_report(
+        {**state, "evidence": evidence, "conflicting_evidence": conflicts}
+    )
+    draft = draft_res["draft_report"]
+    assert "give me a report about" not in draft["title"]
+    assert "Building a Multi-Tenant SaaS-Based E-Commerce Platform" in draft["title"]
+
+    sections = draft["sections"]
+    exec_summary = sections.get("Executive Summary", "")
+    assert "multi-tenant" in exec_summary.lower() or "saas" in exec_summary.lower()
+    assert "statically typed" not in exec_summary.lower()

@@ -5,8 +5,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 const githubRepo = 'https://github.com/thiga-mindfire/agentic_web_starter';
 
 const config: Config = {
-  title: 'Agentic Web Starter',
-  tagline: 'FastAPI agentic RAG backend — project documentation',
+  title: 'AI Technical Research & Decision Report Agent',
+  tagline: 'Autonomous multi-agent research, empirical benchmarking, and executive technical decision reports',
   favicon: 'img/favicon.ico',
 
   future: {
@@ -50,12 +50,17 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: 'Agentic Web Starter',
+      title: 'AI Research Agent',
       logo: {
-        alt: 'Agentic Web Starter',
+        alt: 'AI Research Agent',
         src: 'img/logo.svg',
       },
       items: [
+        {
+          to: '/',
+          label: 'Research Console',
+          position: 'left',
+        },
         {
           type: 'docSidebar',
           sidebarId: 'docsSidebar',

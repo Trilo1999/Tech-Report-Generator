@@ -43,6 +43,24 @@ services:
       retries: 5
 
   # ────────────────────────────────────────────────────────────
+  # Redis 7 (Conversation Memory & High-Performance Caching)
+  # ────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: research_agent_redis
+    restart: unless-stopped
+    command: redis-server --loglevel warning
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ────────────────────────────────────────────────────────────
   # Research Agent Service (FastAPI + LangGraph)
   # ────────────────────────────────────────────────────────────
   agent:
@@ -58,19 +76,35 @@ services:
     environment:
       - QDRANT_URL=http://qdrant:6333
       - POSTGRES_URL=postgresql://postgres:postgrespassword@postgres:5432/research_agent
+      - REDIS_HOST=redis
     volumes:
       - ./app:/app/app
-
-
     depends_on:
       qdrant:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ────────────────────────────────────────────────────────────
+  # Website & Frontend UI (Docusaurus + AI Research Console)
+  # ────────────────────────────────────────────────────────────
+  website:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+    container_name: research_agent_website
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - agent
 
 volumes:
-
   qdrant_data:
     name: research_agent_qdrant_data
   postgres_data:
     name: research_agent_postgres_data
+  redis_data:
+    name: research_agent_redis_data
