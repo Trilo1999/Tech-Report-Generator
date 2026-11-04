@@ -41,16 +41,19 @@ class ResearchService:
         self, request: ResearchStartRequest, current_user: User
     ) -> Dict[str, Any]:
         """Initialize a new research workflow thread as synchronous or background task."""
+        from app.utils.core_utils.text_processing_utils import sanitize_topic
+
+        clean_topic = sanitize_topic(request.topic)
         thread_id = request.thread_id or f"research_{uuid.uuid4().hex[:12]}"
         self.manager.create_task(
             thread_id=thread_id,
-            topic=request.topic,
+            topic=clean_topic,
             user_id=current_user.id,
             user_name=current_user.name,
         )
 
         if request.sync:
-            await self.manager.execute_research_background(thread_id, request.topic)
+            await self.manager.execute_research_background(thread_id, clean_topic)
             task = self.manager.get_task(thread_id)
             if task and task.error:
                 raise HTTPException(
@@ -67,7 +70,7 @@ class ResearchService:
                 "thread_id": thread_id,
                 "task_id": thread_id,
                 "status": values.get("status", "drafted"),
-                "topic": values.get("topic", request.topic),
+                "topic": values.get("topic", clean_topic),
                 "is_running": False,
                 "subquestions": values.get("subquestions", []),
                 "evidence_count": len(values.get("evidence", [])),
@@ -79,12 +82,12 @@ class ResearchService:
 
         # Asynchronous non-blocking background task
         asyncio.create_task(
-            self.manager.execute_research_background(thread_id, request.topic)
+            self.manager.execute_research_background(thread_id, clean_topic)
         )
         return {
             "thread_id": thread_id,
             "task_id": thread_id,
-            "topic": request.topic,
+            "topic": clean_topic,
             "status": "running",
             "is_running": True,
             "is_pending_review": False,

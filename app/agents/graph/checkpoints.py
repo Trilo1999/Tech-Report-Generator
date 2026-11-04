@@ -13,7 +13,6 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 from psycopg_pool import ConnectionPool
 
-from app.agents.graph.builder import create_research_graph
 from app.config.env_config import CHECKPOINT_DB_PATH, POSTGRES_URL
 from app.repository.sql_repository.postgres import is_postgres_available
 
@@ -81,6 +80,8 @@ def get_thread_state(
 ) -> Optional[Dict[str, Any]]:
     """Retrieve current snapshot and pending next nodes for a given thread ID."""
     try:
+        from app.agents.graph.builder import create_research_graph
+
         cp = checkpointer or get_checkpointer()
         graph = create_research_graph(checkpointer=cp)
         config = {"configurable": {"thread_id": thread_id}}
@@ -105,6 +106,8 @@ def resume_workflow(
     """
     Resume an interrupted workflow thread by providing the reviewer's decision payload.
     """
+    from app.agents.graph.builder import create_research_graph
+
     cp = checkpointer or get_checkpointer()
     graph = create_research_graph(checkpointer=cp)
     config = {"configurable": {"thread_id": thread_id}}

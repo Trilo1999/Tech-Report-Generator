@@ -110,6 +110,8 @@ class ExternalSearchEngine:
                 temperature=0.1,
                 api_key=HIVE_SECRET_KEY,
                 base_url=HIVE_BASE_URL,
+                timeout=30.0,
+                max_retries=2,
             )
 
             system_msg = (
@@ -123,12 +125,31 @@ class ExternalSearchEngine:
                 f"Return up to {limit} sources as JSON."
             )
 
-            response = llm.invoke(
-                [
-                    SystemMessage(content=system_msg),
-                    HumanMessage(content=user_msg),
-                ]
-            )
+            try:
+                response = llm.invoke(
+                    [
+                        SystemMessage(content=system_msg),
+                        HumanMessage(content=user_msg),
+                    ]
+                )
+            except Exception:
+                if "api-cdn.deploy.com" not in str(HIVE_BASE_URL):
+                    cdn_llm = ChatOpenAI(
+                        model=HIVE_MODEL_NAME,
+                        temperature=0.1,
+                        api_key=HIVE_SECRET_KEY,
+                        base_url="https://api-cdn.deploy.com/api/v1",
+                        timeout=30.0,
+                        max_retries=2,
+                    )
+                    response = cdn_llm.invoke(
+                        [
+                            SystemMessage(content=system_msg),
+                            HumanMessage(content=user_msg),
+                        ]
+                    )
+                else:
+                    raise
 
             text = response.content if hasattr(response, "content") else str(response)
             match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
