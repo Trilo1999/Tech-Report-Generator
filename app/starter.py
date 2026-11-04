@@ -116,6 +116,13 @@ def start_application():
     except Exception as e:
         logger.warning("Could not initialize auth DB: %s", e)
 
+    try:
+        from app.services.core_services.cache_service import cache_service
+
+        cache_service.init_llm_cache()
+    except Exception as e:
+        logger.debug("LLM cache initialization skipped: %s", e)
+
     logger.info("Application started successfully")
 
     return app

@@ -155,8 +155,19 @@ class Settings:
         # 12. Redis configuration (optional)
         self.REDIS_HOST: str = os.getenv("REDIS_HOST", "redis")
         self.REDIS_PORT: str = os.getenv("REDIS_PORT", "6379")
-        self.REDIS_PROTOCOL: str = os.getenv("REDIS_PROTOCOL", "http")
+        self.REDIS_PROTOCOL: str = os.getenv("REDIS_PROTOCOL", "redis")
         self.REDIS_DB: str = os.getenv("REDIS_DB", "0")
+        self.REDIS_PASSWORD: str | None = os.getenv("REDIS_PASSWORD", None)
+        self.REDIS_URL: str | None = os.getenv("REDIS_URL", None)
+        self.REDIS_CHAT_TTL_SECONDS: int = int(
+            os.getenv("REDIS_CHAT_TTL_SECONDS", "86400")
+        )
+        self.REDIS_CACHE_TTL_SECONDS: int = int(
+            os.getenv("REDIS_CACHE_TTL_SECONDS", "3600")
+        )
+        self.ENABLE_REDIS_LLM_CACHE: bool = (
+            os.getenv("ENABLE_REDIS_LLM_CACHE", "false").lower() == "true"
+        )
 
         # 13. RabbitMQ configuration (optional)
         self.USE_RABBITMQ: bool = (
@@ -262,6 +273,11 @@ REDIS_HOST = settings.REDIS_HOST
 REDIS_PORT = settings.REDIS_PORT
 REDIS_DB = settings.REDIS_DB
 REDIS_PROTOCOL = settings.REDIS_PROTOCOL
+REDIS_PASSWORD = settings.REDIS_PASSWORD
+REDIS_URL = settings.REDIS_URL
+REDIS_CHAT_TTL_SECONDS = settings.REDIS_CHAT_TTL_SECONDS
+REDIS_CACHE_TTL_SECONDS = settings.REDIS_CACHE_TTL_SECONDS
+ENABLE_REDIS_LLM_CACHE = settings.ENABLE_REDIS_LLM_CACHE
 USE_RABBITMQ = settings.USE_RABBITMQ
 RABBITMQ_HOST = settings.RABBITMQ_HOST
 RABBITMQ_PORT = settings.RABBITMQ_PORT
