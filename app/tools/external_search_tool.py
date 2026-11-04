@@ -180,6 +180,16 @@ class ExternalSearchEngine:
         if not query or not query.strip():
             return []
 
+        cache_key = f"{query.strip().lower()}:{min_reliability}:{limit}"
+        try:
+            from app.services.core_services.cache_service import cache_service
+
+            cached_res = cache_service.get_cached_search_query(cache_key)
+            if cached_res is not None:
+                return cached_res
+        except Exception:
+            pass
+
         sources = self.load_sources(sources_path)
         query_tokens = self.tokenize(query)
 
@@ -275,6 +285,14 @@ class ExternalSearchEngine:
                     },
                 }
             )
+
+        if results:
+            try:
+                from app.services.core_services.cache_service import cache_service
+
+                cache_service.cache_search_query(cache_key, results)
+            except Exception:
+                pass
 
         return results
 
