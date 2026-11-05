@@ -50,6 +50,12 @@ class Settings:
         self.GEMINI_API_KEY: str | None = os.getenv(
             "GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY", None)
         )
+        self.TAVILY_API_KEY: str | None = os.getenv("TAVILY_API_KEY", None)
+        self.TAVILY_SEARCH_DEPTH: str = os.getenv("TAVILY_SEARCH_DEPTH", "basic")
+        self.TAVILY_DAILY_LIMIT: int = int(os.getenv("TAVILY_DAILY_LIMIT", "50"))
+        self.TAVILY_CACHE_TTL_HOURS: int = int(
+            os.getenv("TAVILY_CACHE_TTL_HOURS", "48")
+        )
 
         # 4. Hive AI and LLM Provider Settings
         self.HIVE_SECRET_KEY: str = os.getenv(
@@ -246,6 +252,10 @@ ALLOWED_ORIGINS = settings.ALLOWED_ORIGINS
 BASE_PATH = settings.BASE_PATH
 OPENAI_API_KEY = settings.OPENAI_API_KEY
 GEMINI_API_KEY = settings.GEMINI_API_KEY
+TAVILY_API_KEY = settings.TAVILY_API_KEY
+TAVILY_SEARCH_DEPTH = settings.TAVILY_SEARCH_DEPTH
+TAVILY_DAILY_LIMIT = settings.TAVILY_DAILY_LIMIT
+TAVILY_CACHE_TTL_HOURS = settings.TAVILY_CACHE_TTL_HOURS
 HIVE_SECRET_KEY = settings.HIVE_SECRET_KEY
 HIVE_BASE_URL = settings.HIVE_BASE_URL
 HIVE_MODEL_NAME = settings.HIVE_MODEL_NAME

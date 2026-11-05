@@ -1,0 +1,17 @@
+node_modules
+*/node_modules
+website/node_modules
+website/build
+website/.docusaurus
+venv
+.venv
+__pycache__
+*/**/__pycache__
+.git
+.github
+.pytest_cache
+.ruff_cache
+data
+reports
+*.db
+.env

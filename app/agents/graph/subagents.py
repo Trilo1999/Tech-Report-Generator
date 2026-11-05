@@ -18,7 +18,10 @@ from app.agents.graph.nodes import draft_report as base_draft_report
 from app.agents.graph.nodes import get_llm
 from app.agents.graph.state import EvidenceItem, ResearchState
 from app.tools.cost_calculator_tool import calculate_cost_tool
-from app.tools.external_search_tool import search_external_sources_tool
+from app.tools.external_search_tool import (
+    search_external_sources_tool,
+    search_tavily_web_tool,
+)
 from app.tools.internal_search_tool import search_internal_documents_tool
 from app.tools.tabular_analysis_tool import analyze_csv_tool
 
@@ -186,12 +189,14 @@ def external_research_agent(state: ResearchState) -> Dict[str, Any]:
     llm = get_llm()
     if llm is not None and os.getenv("MOCK_LLM", "false").lower() != "true":
         try:
-            llm_with_tools = llm.bind_tools([search_external_sources_tool])
+            llm_with_tools = llm.bind_tools(
+                [search_external_sources_tool, search_tavily_web_tool]
+            )
             prompt = (
                 f"You are the External Research Agent. "
                 f"Research Topic: '{topic}'. Subquestions to research: {queries}. "
-                f"Decide whether to search peer-reviewed whitepapers, industry benchmarks, or analyst publications. "
-                f"If you need external research, call search_external_sources with targeted queries. "
+                f"Decide whether to search peer-reviewed whitepapers, industry benchmarks, analyst publications, or search the live web via Tavily. "
+                f"If you need external research, call search_external_sources or search_tavily_web with targeted queries. "
                 f"If no external research is needed, respond directly without calling tools."
             )
             response = llm_with_tools.invoke(
@@ -205,22 +210,29 @@ def external_research_agent(state: ResearchState) -> Dict[str, Any]:
             if hasattr(response, "tool_calls") and response.tool_calls:
                 llm_autonomous = True
                 for tc in response.tool_calls:
-                    if tc.get("name") == "search_external_sources":
+                    tool_name = tc.get("name")
+                    if tool_name in ("search_external_sources", "search_tavily_web"):
                         args = tc.get("args", {})
-                        executed_calls.append(
-                            {"tool": "search_external_sources", "args": args}
+                        executed_calls.append({"tool": tool_name, "args": args})
+                        tool_fn = (
+                            search_tavily_web_tool
+                            if tool_name == "search_tavily_web"
+                            else search_external_sources_tool
                         )
-                        tool_res = search_external_sources_tool.invoke(args)
+                        tool_res = tool_fn.invoke(args)
                         tool_invocations += 1
                         if isinstance(tool_res, list):
                             for res in tool_res:
                                 sid = res.get("source_id", "")
                                 if sid and sid not in existing_ids:
                                     existing_ids.add(sid)
+                                    source_type = res.get(
+                                        "source_type", "external_mock"
+                                    )
                                     items.append(
                                         EvidenceItem(
                                             source_id=sid,
-                                            source_type="external_mock",
+                                            source_type=source_type,
                                             title=res.get(
                                                 "title", f"External Source [{sid}]"
                                             ),

@@ -4,7 +4,6 @@ from langchain_core.tools import BaseTool
 from pydantic.v1 import BaseModel, Field
 
 from app.config.env_config import settings
-from app.services.core_services.retrieval_service import vector_retriever
 
 
 class RetrieverToolInput(BaseModel):
@@ -33,6 +32,8 @@ class RetrieverTool(BaseTool):
         Returns:
             Retrieval result payload.
         """
+        from app.services.core_services.retrieval_service import vector_retriever
+
         vector_retriever.initialize_vectordb()
         contexts = vector_retriever.search(query)
         # contexts = json.dumps([context.page_content for context in contexts])
