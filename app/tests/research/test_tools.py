@@ -318,3 +318,67 @@ def test_generate_report_invalid_format():
     """Verify invalid export format raises ValueError."""
     with pytest.raises(ValueError, match="Unsupported report export format"):
         generate_report({"title": "Test"}, format="html")
+
+
+# ────────────────────────────────────────────────────────────
+# 6. Tavily Web Search Tool Tests
+# ────────────────────────────────────────────────────────────
+def test_search_tavily_without_key_graceful_empty(monkeypatch):
+    """Verify search_tavily returns empty list gracefully when API key is not set."""
+    from app.tools.external_search_tool import search_tavily
+
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    results = search_tavily("latest ecommerce architecture", limit=2)
+    assert results == []
+
+
+def test_search_tavily_with_mock_client(monkeypatch):
+    """Verify search_tavily correctly normalizes Tavily API results into standardized citations."""
+    from unittest.mock import MagicMock
+
+    import tavily
+
+    from app.tools.external_search_tool import (
+        default_external_search_engine,
+        search_tavily_web_tool,
+    )
+
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-mock-test-key")
+    monkeypatch.delenv("MOCK_LLM", raising=False)
+
+    mock_client = MagicMock()
+    mock_client.search.return_value = {
+        "results": [
+            {
+                "title": "Modern Multi-Tenant SaaS Architecture 2026",
+                "url": "https://architecture.example.com/saas-multitenant",
+                "content": "Row-level security and tenant routing via API gateways maximize tenant density and isolation.",
+                "score": 0.94,
+            },
+            {
+                "title": "Scaling E-Commerce Order Pipelines",
+                "url": "https://retailtech.example.org/pipelines",
+                "content": "Event-driven asynchronous queues decouple inventory reservations from payment settlement.",
+                "score": 0.88,
+            },
+        ]
+    }
+    monkeypatch.setattr(tavily, "TavilyClient", lambda api_key: mock_client)
+
+    results = default_external_search_engine.search_tavily(
+        "saas multi-tenant ecommerce", limit=2
+    )
+    assert len(results) == 2
+    top = results[0]
+    assert top["source_id"] == "EXT-TAVILY-01"
+    assert top["source_type"] == "external_tavily"
+    assert "architecture.example.com" in top["author"]
+    assert top["reliability_score"] >= 0.85
+    assert "Row-level security" in top["content"]
+
+    # Also test the LangChain @tool wrapper
+    tool_results = search_tavily_web_tool.invoke(
+        {"query": "saas multi-tenant ecommerce", "limit": 2}
+    )
+    assert len(tool_results) == 2
+    assert tool_results[0]["source_id"] == "EXT-TAVILY-01"

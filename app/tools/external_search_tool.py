@@ -81,6 +81,109 @@ class ExternalSearchEngine:
             data = json.load(f)
         return data.get("sources", [])
 
+    def _check_and_increment_tavily_usage(self, daily_limit: int = 50) -> bool:
+        """
+        Check and record daily Tavily usage to prevent accidental overuse.
+        Returns True if within limit, False if daily cap reached.
+        """
+        from datetime import datetime, timezone
+
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        day_key = f"tavily:usage:{today}"
+        try:
+            from app.services.core_services.cache_service import cache_service
+
+            if cache_service.redis_client is not None:
+                current_count = cache_service.redis_client.incr(day_key)
+                if current_count == 1:
+                    cache_service.redis_client.expire(day_key, 86400 * 2)
+                return current_count <= daily_limit
+        except Exception:
+            pass
+
+        # In-memory tracking fallback
+        if not hasattr(self, "_tavily_daily_counts"):
+            self._tavily_daily_counts = {}
+        count = self._tavily_daily_counts.get(today, 0) + 1
+        self._tavily_daily_counts[today] = count
+        return count <= daily_limit
+
+    def search_tavily(
+        self,
+        query: str,
+        limit: int = 4,
+        search_depth: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Search live, real-time external technical web data using Tavily Search API.
+        Enforces daily budget limits, query optimization, and credit preservation.
+        """
+        if os.getenv("MOCK_LLM", "false").lower() == "true":
+            return []
+
+        from app.config.env_config import settings
+
+        api_key = os.getenv("TAVILY_API_KEY") or getattr(
+            settings, "TAVILY_API_KEY", None
+        )
+        if not api_key or not api_key.strip():
+            return []
+
+        daily_limit = getattr(settings, "TAVILY_DAILY_LIMIT", 50)
+        if not self._check_and_increment_tavily_usage(daily_limit=daily_limit):
+            return []
+
+        effective_depth = search_depth or getattr(
+            settings, "TAVILY_SEARCH_DEPTH", "basic"
+        )
+        effective_limit = min(limit, 4)
+
+        try:
+            from urllib.parse import urlparse
+
+            from tavily import TavilyClient
+
+            client = TavilyClient(api_key=api_key.strip())
+            response = client.search(
+                query=query.strip()[:250],
+                max_results=effective_limit,
+                search_depth=effective_depth,
+                include_answer=False,
+            )
+
+            raw_results = response.get("results", [])
+            results: List[Dict[str, Any]] = []
+            for idx, res in enumerate(raw_results[:effective_limit], start=1):
+                source_id = f"EXT-TAVILY-{idx:02d}"
+                url = res.get("url", "")
+                domain = urlparse(url).netloc or "Web Source"
+                raw_score = float(res.get("score", 0.90))
+                rel_score = min(0.98, max(0.85, raw_score))
+
+                results.append(
+                    {
+                        "source_id": source_id,
+                        "source_type": "external_tavily",
+                        "title": res.get("title", f"Web Intelligence [{query}]"),
+                        "content": res.get("content", ""),
+                        "url": url,
+                        "author": domain,
+                        "publication": f"Live Web ({domain})",
+                        "date": "2026",
+                        "reliability_score": rel_score,
+                        "relevance_score": min(1.0, max(0.80, raw_score)),
+                        "metadata": {
+                            "source_id": source_id,
+                            "publication": domain,
+                            "url": url,
+                            "provider": "tavily",
+                        },
+                    }
+                )
+            return results
+        except Exception:
+            return []
+
     def search_hive_ai(self, query: str, limit: int = 4) -> List[Dict[str, Any]]:
         """
         Search external technical research using Hive AI (OpenAI-compatible) endpoint with web search.
@@ -210,6 +313,30 @@ class ExternalSearchEngine:
                 return cached_res
         except Exception:
             pass
+
+        # 1. Prioritize Tavily Web Search if TAVILY_API_KEY is configured
+        from app.config.env_config import settings
+
+        tavily_key = os.getenv("TAVILY_API_KEY") or getattr(
+            settings, "TAVILY_API_KEY", None
+        )
+        if (
+            tavily_key
+            and tavily_key.strip()
+            and os.getenv("MOCK_LLM", "false").lower() != "true"
+        ):
+            tavily_res = self.search_tavily(query=query, limit=limit)
+            if tavily_res:
+                try:
+                    from app.services.core_services.cache_service import cache_service
+
+                    ttl_seconds = getattr(settings, "TAVILY_CACHE_TTL_HOURS", 48) * 3600
+                    cache_service.cache_search_query(
+                        cache_key, tavily_res, ttl=ttl_seconds
+                    )
+                except Exception:
+                    pass
+                return tavily_res
 
         sources = self.load_sources(sources_path)
         query_tokens = self.tokenize(query)
@@ -374,4 +501,62 @@ class ExternalSearchTool(BaseTool):
         """Execute external research search."""
         return default_external_search_engine.search(
             query=query, min_reliability=min_reliability, limit=limit
+        )
+
+
+# Tavily live web search function alias
+search_tavily = default_external_search_engine.search_tavily
+
+
+class TavilySearchInput(BaseModel):
+    query: str = Field(
+        ...,
+        description="Query string to search the live web for real-time technical documentation, recent benchmarks, or ecosystem news.",
+    )
+    search_depth: str = Field(
+        "basic",
+        description="Tavily search depth: 'basic' (1 credit, recommended) or 'advanced' (2 credits).",
+    )
+    limit: int = Field(
+        4,
+        description="Maximum number of live web sources to return (default: 4).",
+    )
+
+
+@tool("search_tavily_web", args_schema=TavilySearchInput)
+def search_tavily_web_tool(
+    query: str,
+    search_depth: str = "basic",
+    limit: int = 4,
+) -> List[Dict[str, Any]]:
+    """
+    Search the live web for the latest, real-time external technical documentation,
+    whitepapers, and benchmarks using Tavily Search API.
+    Returns ranked citations tagged with [EXT-TAVILY-xx] identifiers.
+    """
+    return default_external_search_engine.search_tavily(
+        query=query, limit=limit, search_depth=search_depth
+    )
+
+
+class TavilySearchTool(BaseTool):
+    """Tool that searches live web using Tavily Search API."""
+
+    name: str = "search_tavily_web"
+    description: str = (
+        "Search the live web for the latest, real-time external technical documentation, "
+        "whitepapers, and benchmarks using Tavily Search API. "
+        "Returns ranked citations tagged with [EXT-TAVILY-xx] identifiers."
+    )
+    args_schema: Type[BaseModel] = TavilySearchInput
+
+    def _run(
+        self,
+        query: str,
+        search_depth: str = "basic",
+        limit: int = 4,
+    ) -> List[Dict[str, Any]]:
+        """Execute Tavily live web search."""
+        return default_external_search_engine.search_tavily(
+            query=query, limit=limit, search_depth=search_depth
         )

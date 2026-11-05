@@ -13,10 +13,6 @@ from pydantic import BaseModel, Field
 from qdrant_client.models import FieldCondition, Filter, MatchValue
 
 from app.config.env_config import TOP_K_SEARCH_RESULTS
-from app.services.core_services.qdrant_ingestion import (
-    get_qdrant_client,
-    search_documents,
-)
 
 
 class InternalDocumentRetriever:
@@ -57,6 +53,11 @@ class InternalDocumentRetriever:
         )
 
         query_filter = self.build_filter(filters)
+        from app.services.core_services.qdrant_ingestion import (
+            get_qdrant_client,
+            search_documents,
+        )
+
         client = get_qdrant_client()
         points = search_documents(
             query=query.strip(),
