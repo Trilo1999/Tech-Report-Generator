@@ -59,13 +59,19 @@ def get_llm() -> Optional[BaseChatModel]:
         "your_hive_secret_key_here",
     ):
         try:
+            import httpx
+
+            client = httpx.Client(
+                timeout=httpx.Timeout(connect=10.0, read=25.0, write=10.0, pool=10.0),
+                limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
+            )
             return ChatOpenAI(
                 model=HIVE_MODEL_NAME,
                 temperature=LLM_TEMPERATURE,
                 api_key=HIVE_SECRET_KEY,
                 base_url=HIVE_BASE_URL,
-                timeout=45.0,
-                max_retries=2,
+                http_client=client,
+                max_retries=1,
             )
         except Exception:
             pass
@@ -118,22 +124,58 @@ def _clean_json_response(raw_text: str) -> str:
     return cleaned
 
 
+def _extract_llm_text(response: Any) -> str:
+    """Extract output text from LLM response, checking content and reasoning_content."""
+    text = ""
+    if hasattr(response, "content"):
+        if isinstance(response.content, list):
+            text = "".join(
+                b.get("text", "") if isinstance(b, dict) else str(b)
+                for b in response.content
+            )
+        else:
+            text = str(response.content or "")
+    else:
+        text = str(response or "")
+
+    # For reasoning models (e.g. DeepSeek-R1 / v4-flash), check additional_kwargs if content is blank
+    if not text.strip() and hasattr(response, "additional_kwargs"):
+        reasoning = response.additional_kwargs.get("reasoning_content")
+        if reasoning:
+            text = str(reasoning)
+
+    return text
+
+
+def _safe_invoke_llm(
+    model: BaseChatModel, messages: list, timeout_sec: float = 30.0
+) -> Any:
+    """Invoke LLM with hard timeout to prevent hanging indefinitely on stalled HTTP sockets."""
+    import concurrent.futures
+
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(model.invoke, messages)
+    try:
+        return future.result(timeout=timeout_sec)
+    except concurrent.futures.TimeoutError:
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise TimeoutError(f"LLM call timed out after {timeout_sec}s")
+    except Exception:
+        executor.shutdown(wait=False)
+        raise
+    else:
+        executor.shutdown(wait=False)
+
+
 def _invoke_llm_json(prompt: str, fallback: Dict[str, Any]) -> Dict[str, Any]:
     """Invoke LLM and parse JSON output, returning fallback on failure or mock mode."""
     llm = get_llm()
     if llm is not None:
         try:
-            response = llm.invoke([HumanMessage(content=prompt)])
-            if hasattr(response, "content"):
-                if isinstance(response.content, list):
-                    text = "".join(
-                        b.get("text", "") if isinstance(b, dict) else str(b)
-                        for b in response.content
-                    )
-                else:
-                    text = str(response.content)
-            else:
-                text = str(response)
+            response = _safe_invoke_llm(
+                llm, [HumanMessage(content=prompt)], timeout_sec=30.0
+            )
+            text = _extract_llm_text(response)
             cleaned = _clean_json_response(text)
             return json.loads(cleaned)
         except Exception:
@@ -141,20 +183,28 @@ def _invoke_llm_json(prompt: str, fallback: Dict[str, Any]) -> Dict[str, Any]:
                 getattr(llm, "openai_api_base", "")
             ):
                 try:
+                    import httpx
+
+                    client = httpx.Client(
+                        timeout=httpx.Timeout(
+                            connect=10.0, read=25.0, write=10.0, pool=10.0
+                        ),
+                        limits=httpx.Limits(
+                            max_keepalive_connections=5, max_connections=10
+                        ),
+                    )
                     cdn_llm = ChatOpenAI(
                         model=HIVE_MODEL_NAME,
                         temperature=LLM_TEMPERATURE,
                         api_key=HIVE_SECRET_KEY,
                         base_url="https://api-cdn.deploy.com/api/v1",
-                        timeout=45.0,
-                        max_retries=2,
+                        http_client=client,
+                        max_retries=1,
                     )
-                    response = cdn_llm.invoke([HumanMessage(content=prompt)])
-                    text = (
-                        str(response.content)
-                        if hasattr(response, "content")
-                        else str(response)
+                    response = _safe_invoke_llm(
+                        cdn_llm, [HumanMessage(content=prompt)], timeout_sec=30.0
                     )
+                    text = _extract_llm_text(response)
                     cleaned = _clean_json_response(text)
                     return json.loads(cleaned)
                 except Exception:
@@ -173,10 +223,10 @@ def _invoke_llm_json(prompt: str, fallback: Dict[str, Any]) -> Dict[str, Any]:
                 temperature=LLM_TEMPERATURE,
                 google_api_key=GOOGLE_API_KEY,
             )
-            response = gemini.invoke([HumanMessage(content=prompt)])
-            text = (
-                str(response.content) if hasattr(response, "content") else str(response)
+            response = _safe_invoke_llm(
+                gemini, [HumanMessage(content=prompt)], timeout_sec=35.0
             )
+            text = _extract_llm_text(response)
             cleaned = _clean_json_response(text)
             return json.loads(cleaned)
         except Exception:
@@ -554,7 +604,10 @@ def evaluate_evidence(state: ResearchState) -> Dict[str, Any]:
 
     # Evaluate coverage across evidence types
     has_internal = any(e.get("source_type") == "internal_qdrant" for e in evidence_list)
-    has_external = any(e.get("source_type") == "external_mock" for e in evidence_list)
+    has_external = any(
+        e.get("source_type") in ("external_mock", "external_tavily")
+        for e in evidence_list
+    )
     has_csv = any(e.get("source_type") == "tabular_csv" for e in evidence_list)
     has_cost = any(e.get("source_type") == "cost_calculation" for e in evidence_list)
 
