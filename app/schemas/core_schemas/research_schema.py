@@ -44,7 +44,11 @@ class EvidenceItem(TypedDict):
 
     source_id: str  # Canonical ID: QDR-01, EXT-01, CSV-01, COST-01
     source_type: Literal[
-        "internal_qdrant", "external_mock", "tabular_csv", "cost_calculation"
+        "internal_qdrant",
+        "external_mock",
+        "external_tavily",
+        "tabular_csv",
+        "cost_calculation",
     ]
     title: str
     content: str

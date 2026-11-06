@@ -98,7 +98,7 @@ users exist in the database.
 
 ---
 
-## Redis
+## Redis & Multi-Tier Caching
 
 | Variable | Description |
 |----------|-------------|
@@ -106,6 +106,21 @@ users exist in the database.
 | `REDIS_PORT` | Port (default: `6379`) |
 | `REDIS_PROTOCOL` | `redis` or `rediss` (TLS) |
 | `REDIS_DB` | Database index (default: `0`) |
+| `REDIS_CACHE_TTL_SECONDS` | Default query cache TTL in seconds (default: `86400` / 24 hours) |
+| `REDIS_MEMORY_TTL_SECONDS` | Chat conversation memory TTL in seconds (default: `604800` / 7 days) |
+
+---
+
+## Tavily Web Search & Overuse Protection
+
+Safeguards external web research against credit exhaustion while providing live citation retrieval.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TAVILY_API_KEY` | *(empty)* | API key from tavily.com for external web research |
+| `TAVILY_SEARCH_DEPTH` | `basic` | Search depth: `basic` (1 credit/call) or `advanced` (2 credits/call) |
+| `TAVILY_DAILY_LIMIT` | `50` | Daily request ceiling tracked atomically in Redis |
+| `TAVILY_CACHE_TTL_HOURS` | `48` | Extended query cache TTL in hours to prevent repeat API calls |
 
 ---
 

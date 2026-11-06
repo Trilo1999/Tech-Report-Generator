@@ -7,11 +7,16 @@ venv
 .venv
 __pycache__
 */**/__pycache__
+**/*.pyc
 .git
 .github
 .pytest_cache
 .ruff_cache
 data
+app/data/cache
+app/data/*.db
+app/data/qdrant_storage
 reports
+app/reports
 *.db
 .env

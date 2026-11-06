@@ -91,13 +91,15 @@ class ExternalSearchEngine:
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         day_key = f"tavily:usage:{today}"
         try:
-            from app.services.core_services.cache_service import cache_service
+            from app.config.redis_config import is_redis_available, redis_config
 
-            if cache_service.redis_client is not None:
-                current_count = cache_service.redis_client.incr(day_key)
-                if current_count == 1:
-                    cache_service.redis_client.expire(day_key, 86400 * 2)
-                return current_count <= daily_limit
+            if is_redis_available():
+                client = redis_config.get_redis_client()
+                if client is not None:
+                    current_count = client.incr(day_key)
+                    if current_count == 1:
+                        client.expire(day_key, 86400 * 2)
+                    return current_count <= daily_limit
         except Exception:
             pass
 
