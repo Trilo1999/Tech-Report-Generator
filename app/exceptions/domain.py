@@ -64,6 +64,13 @@ class ValidationError(AppError):
     code = "validation_error"
 
 
+class SecurityValidationError(AppError, ValueError):
+    """Potential prompt injection, jailbreak, or adversarial payload detected."""
+
+    status_code = 400
+    code = "security_validation_error"
+
+
 class InternalError(AppError):
     """Unexpected internal error (e.g. DB, I/O)."""
 

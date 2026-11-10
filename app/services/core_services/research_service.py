@@ -41,9 +41,11 @@ class ResearchService:
         self, request: ResearchStartRequest, current_user: User
     ) -> Dict[str, Any]:
         """Initialize a new research workflow thread as synchronous or background task."""
+        from app.utils.core_utils.guardrails import validate_and_sanitize_query
         from app.utils.core_utils.text_processing_utils import sanitize_topic
 
-        clean_topic = sanitize_topic(request.topic)
+        safe_topic = validate_and_sanitize_query(request.topic, strict_raise=True)
+        clean_topic = sanitize_topic(safe_topic)
         thread_id = request.thread_id or f"research_{uuid.uuid4().hex[:12]}"
         self.manager.create_task(
             thread_id=thread_id,
