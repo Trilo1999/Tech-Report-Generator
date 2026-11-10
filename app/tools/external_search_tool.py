@@ -162,12 +162,19 @@ class ExternalSearchEngine:
                 raw_score = float(res.get("score", 0.90))
                 rel_score = min(0.98, max(0.85, raw_score))
 
+                from app.utils.core_utils.guardrails import sanitize_external_content
+
+                safe_content = sanitize_external_content(res.get("content", ""))
+                safe_title = sanitize_external_content(
+                    res.get("title", f"Web Intelligence [{query}]")
+                )
+
                 results.append(
                     {
                         "source_id": source_id,
                         "source_type": "external_tavily",
-                        "title": res.get("title", f"Web Intelligence [{query}]"),
-                        "content": res.get("content", ""),
+                        "title": safe_title,
+                        "content": safe_content,
                         "url": url,
                         "author": domain,
                         "publication": f"Live Web ({domain})",
@@ -265,15 +272,23 @@ class ExternalSearchEngine:
             if not raw_sources and isinstance(data, list):
                 raw_sources = data
 
+            from app.utils.core_utils.guardrails import sanitize_external_content
+
             results: List[Dict[str, Any]] = []
             for idx, src in enumerate(raw_sources[:limit], start=1):
                 source_id = f"EXT-HIVE-{idx:02d}"
+                safe_title = sanitize_external_content(
+                    src.get("title", f"External Research [{query}]")
+                )
+                safe_content = sanitize_external_content(
+                    src.get("snippet", src.get("description", ""))
+                )
                 results.append(
                     {
                         "source_id": source_id,
                         "source_type": "external_mock",
-                        "title": src.get("title", f"External Research [{query}]"),
-                        "content": src.get("snippet", src.get("description", "")),
+                        "title": safe_title,
+                        "content": safe_content,
                         "url": src.get("url", "https://hive.ai/research"),
                         "author": src.get("author", "Hive AI Web Research"),
                         "publication": src.get(
@@ -410,17 +425,21 @@ class ExternalSearchEngine:
             if hive_results:
                 return hive_results
 
+        from app.utils.core_utils.guardrails import sanitize_external_content
+
         results: List[Dict[str, Any]] = []
         for idx, (c_score, rel, rel_score, src) in enumerate(
             scored_sources[:limit], start=1
         ):
             source_id = src.get("id") or f"EXT-{idx:02d}"
+            safe_title = sanitize_external_content(src.get("title", "Untitled Source"))
+            safe_content = sanitize_external_content(src.get("snippet", ""))
             results.append(
                 {
                     "source_id": source_id,
                     "source_type": "external_mock",
-                    "title": src.get("title", "Untitled Source"),
-                    "content": src.get("snippet", ""),
+                    "title": safe_title,
+                    "content": safe_content,
                     "url": src.get("url", ""),
                     "author": src.get("author", "Unknown"),
                     "publication": src.get("publication", "External Analyst"),

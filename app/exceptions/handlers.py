@@ -1,6 +1,7 @@
 import asyncio
 
 from fastapi import Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -12,23 +13,60 @@ from app.exceptions.domain import AppError
 async def request_validation_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
-    """Handle Pydantic request validation errors (422).
+    """Handle Pydantic request validation errors (422 or 400 for security guardrail violations).
 
     Args:
         request: The FastAPI request.
         exc: The validation error exception.
 
     Returns:
-        JSONResponse with 422 status and validation details.
+        JSONResponse with appropriate status and sanitized validation details.
     """
+    errors = jsonable_encoder(exc.errors())
+
+    # Detect if validation was blocked by security guardrails
+    is_security_error = any(
+        "security guardrail" in str(err.get("msg", "")).lower()
+        or "prompt injection" in str(err.get("msg", "")).lower()
+        for err in errors
+    )
+
+    if is_security_error:
+        security_msg = next(
+            (
+                str(err.get("msg", ""))
+                for err in errors
+                if "security guardrail" in str(err.get("msg", "")).lower()
+                or "prompt injection" in str(err.get("msg", "")).lower()
+            ),
+            "Adversarial or prompt injection pattern detected in input.",
+        )
+        # Clean up Pydantic prefix if present
+        if security_msg.startswith("Value error, "):
+            security_msg = security_msg[len("Value error, ") :]
+
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": "security_validation_error",
+                    "message": security_msg,
+                    "details": errors,
+                },
+                "detail": security_msg,
+                "path": request.url.path,
+            },
+        )
+
     return JSONResponse(
         status_code=422,
         content={
             "error": {
                 "code": "validation_error",
                 "message": "Validation error",
-                "details": exc.errors(),
+                "details": errors,
             },
+            "detail": "Validation error",
             "path": request.url.path,
         },
     )

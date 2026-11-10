@@ -3,7 +3,7 @@
 import operator
 from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing_extensions import NotRequired, TypedDict
 
 
@@ -20,6 +20,13 @@ class ResearchStartRequest(BaseModel):
         False,
         description="Whether to block synchronously (useful for tests and automation)",
     )
+
+    @field_validator("topic")
+    @classmethod
+    def validate_topic_security(cls, v: str) -> str:
+        from app.utils.core_utils.guardrails import validate_and_sanitize_query
+
+        return validate_and_sanitize_query(v, strict_raise=True)
 
 
 class HumanReviewRequest(BaseModel):

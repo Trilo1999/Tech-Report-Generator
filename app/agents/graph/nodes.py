@@ -1011,6 +1011,14 @@ def draft_report(state: ResearchState) -> Dict[str, Any]:
         if "Conflicting Evidence & Reconciliation" not in draft["sections"][target_sec]:
             draft["sections"][target_sec] += conflict_block
 
+    # Post-generation security scan: redact any leaked API keys, tokens, or credentials
+    from app.utils.core_utils.guardrails import scan_output_for_secrets
+
+    if "sections" in draft and isinstance(draft["sections"], dict):
+        for sec_name, sec_content in draft["sections"].items():
+            _, safe_content = scan_output_for_secrets(sec_content)
+            draft["sections"][sec_name] = safe_content
+
     return {
         "draft_report": draft,
         "unsupported_claims": draft["unsupported_claims"],
@@ -1177,10 +1185,13 @@ def revise_sections(state: ResearchState) -> Dict[str, Any]:
     llm_result = _invoke_llm_json(prompt, fallback)
     new_revised_sections = llm_result.get("revised_sections", fallback_revised)
 
-    # Surgically patch ONLY targeted sections
+    # Surgically patch ONLY targeted sections with secret leak scanning
+    from app.utils.core_utils.guardrails import scan_output_for_secrets
+
     for sec_name, updated_text in new_revised_sections.items():
         if sec_name in sections:
-            sections[sec_name] = updated_text
+            _, safe_text = scan_output_for_secrets(updated_text)
+            sections[sec_name] = safe_text
 
     current_draft["sections"] = sections
 
