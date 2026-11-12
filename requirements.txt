@@ -20,6 +20,7 @@ langgraph-checkpoint>=2.0.0
 langgraph-checkpoint-sqlite>=2.0.0
 langgraph-checkpoint-postgres>=2.0.0
 psycopg[binary,pool]>=3.2.0
+alembic>=1.13.0
 
 # --- Document Processing ---
 pypdf>=5.0.0

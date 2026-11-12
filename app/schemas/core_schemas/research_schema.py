@@ -89,6 +89,8 @@ class DraftReport(TypedDict):
     sections: Dict[str, str]  # Section name -> Markdown content with citations
     cited_sources: List[str]  # List of cited source_ids
     unsupported_claims: NotRequired[List[str]]
+    faithfulness_score: NotRequired[float]
+    hallucination_detected: NotRequired[bool]
     created_at: NotRequired[str]
 
 
@@ -131,6 +133,8 @@ class ResearchState(TypedDict):
     conflicting_evidence: List[ConflictingEvidenceItem]
     draft_report: Optional[DraftReport]
     unsupported_claims: List[str]
+    faithfulness_score: NotRequired[float]
+    hallucination_detected: NotRequired[bool]
     human_feedback: Optional[HumanFeedback]
     final_report_path: Optional[str]
     status: Literal[

@@ -31,6 +31,15 @@ class QdrantRepository:
         embeddings = self.embeddings.embed_query("hello world")
         return len(embeddings)
 
+    async def aget_embedding_size(self) -> int:
+        """Return the size of the embedding vectors asynchronously via worker thread.
+
+        Returns:
+            Embedding vector size.
+        """
+        embeddings = await self.embeddings.aembed_query("hello world")
+        return len(embeddings)
+
     def _normalize_model_name(self, model_name: str) -> str:
         """Normalize embedding model name for use in collection names.
 

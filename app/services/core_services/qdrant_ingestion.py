@@ -395,6 +395,29 @@ class QdrantDocumentIngestor:
         )
         return response.points
 
+    async def asearch(
+        self,
+        query: str,
+        query_filter: Optional[Filter] = None,
+        limit: int = 5,
+        client: Optional[QdrantClient] = None,
+    ) -> List[ScoredPoint]:
+        """Search indexed documents asynchronously in a worker thread without blocking event loop."""
+        import asyncio
+
+        return await asyncio.to_thread(self.search, query, query_filter, limit, client)
+
+    async def aingest(
+        self,
+        client: Optional[QdrantClient] = None,
+        pdf_path: Optional[Path] = None,
+        md_path: Optional[Path] = None,
+    ) -> int:
+        """Run document ingestion in a worker thread without blocking event loop."""
+        import asyncio
+
+        return await asyncio.to_thread(self.ingest, client, pdf_path, md_path)
+
 
 # Default singleton instance
 default_qdrant_ingestor = QdrantDocumentIngestor()
@@ -408,6 +431,8 @@ parse_markdown = default_qdrant_ingestor.parse_markdown
 create_or_recreate_collection = default_qdrant_ingestor.create_or_recreate_collection
 ingest_all_documents = default_qdrant_ingestor.ingest
 search_documents = default_qdrant_ingestor.search
+asearch_documents = default_qdrant_ingestor.asearch
+aingest_all_documents = default_qdrant_ingestor.aingest
 
 if __name__ == "__main__":
     ingest_all_documents(force_recreate=True)

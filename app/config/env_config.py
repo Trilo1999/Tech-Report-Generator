@@ -89,6 +89,13 @@ class Settings:
         self.LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", default_provider).lower()
         self.LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", default_model)
         self.LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.2"))
+        self.LLM_REQUEST_TIMEOUT: float = float(
+            os.getenv("LLM_REQUEST_TIMEOUT", "60.0")
+        )
+        self.LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", "3"))
+        self.LLM_CLIENT_CACHE_MAX_SIZE: int = int(
+            os.getenv("LLM_CLIENT_CACHE_MAX_SIZE", "16")
+        )
 
         # 5. Authentication configuration
         self.JWT_SECRET_KEY: str = os.getenv(
