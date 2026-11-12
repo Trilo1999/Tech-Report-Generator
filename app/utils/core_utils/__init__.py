@@ -8,6 +8,10 @@ from app.utils.core_utils.db_utils import (
     utc_now_iso,
 )
 from app.utils.core_utils.embedding_utils import EmbeddingClient, embeddings_client
+from app.utils.core_utils.faithfulness_verifier import (
+    FaithfulnessVerifier,
+    verify_draft_faithfulness,
+)
 from app.utils.core_utils.file_utils import FileProcessor
 from app.utils.core_utils.history_factory_utils import message_history_factory
 from app.utils.core_utils.in_memory_utils import InMemoryHistory, in_memory_history
@@ -28,6 +32,8 @@ __all__ = [
     "message_history_factory",
     "EmbeddingClient",
     "embeddings_client",
+    "FaithfulnessVerifier",
+    "verify_draft_faithfulness",
     "TextProcessor",
     "FileProcessor",
     "Indexer",

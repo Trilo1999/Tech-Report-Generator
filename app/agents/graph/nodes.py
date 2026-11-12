@@ -1019,9 +1019,23 @@ def draft_report(state: ResearchState) -> Dict[str, Any]:
             _, safe_content = scan_output_for_secrets(sec_content)
             draft["sections"][sec_name] = safe_content
 
+    # Faithfulness and Hallucination verification
+    from app.utils.core_utils.faithfulness_verifier import verify_draft_faithfulness
+
+    faithfulness_result = verify_draft_faithfulness(
+        draft_sections=draft.get("sections", {}),
+        evidence_list=evidence_list,
+        existing_unsupported=draft.get("unsupported_claims", []),
+    )
+    draft["unsupported_claims"] = faithfulness_result["unsupported_claims"]
+    draft["faithfulness_score"] = faithfulness_result["faithfulness_score"]
+    draft["hallucination_detected"] = faithfulness_result["hallucination_detected"]
+
     return {
         "draft_report": draft,
         "unsupported_claims": draft["unsupported_claims"],
+        "faithfulness_score": faithfulness_result["faithfulness_score"],
+        "hallucination_detected": faithfulness_result["hallucination_detected"],
         "status": "drafted",
     }
 
@@ -1209,11 +1223,25 @@ def revise_sections(state: ResearchState) -> Dict[str, Any]:
         for u in new_unsupported:
             if u not in combined_unsupported:
                 combined_unsupported.append(u)
-    current_draft["unsupported_claims"] = combined_unsupported
+
+    from app.utils.core_utils.faithfulness_verifier import verify_draft_faithfulness
+
+    faithfulness_result = verify_draft_faithfulness(
+        draft_sections=current_draft.get("sections", {}),
+        evidence_list=evidence_list,
+        existing_unsupported=combined_unsupported,
+    )
+    current_draft["unsupported_claims"] = faithfulness_result["unsupported_claims"]
+    current_draft["faithfulness_score"] = faithfulness_result["faithfulness_score"]
+    current_draft["hallucination_detected"] = faithfulness_result[
+        "hallucination_detected"
+    ]
 
     return {
         "draft_report": current_draft,
-        "unsupported_claims": combined_unsupported,
+        "unsupported_claims": faithfulness_result["unsupported_claims"],
+        "faithfulness_score": faithfulness_result["faithfulness_score"],
+        "hallucination_detected": faithfulness_result["hallucination_detected"],
         "status": "revised",
     }
 

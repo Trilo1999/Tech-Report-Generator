@@ -1,3 +1,5 @@
+from typing import Optional
+
 from langchain_openai import ChatOpenAI
 
 from app.config.env_config import settings
@@ -11,19 +13,27 @@ class OpenAIChatClient:
         """Initialize with model name and temperature from constants."""
         self.model_name = OPENAI_CHAT_MODEL.MODEL_NAME.value
         self.temperature = OPENAI_CHAT_MODEL.TEMPERATURE.value
+        self.request_timeout = getattr(settings, "LLM_REQUEST_TIMEOUT", 60.0)
+        self.max_retries = getattr(settings, "LLM_MAX_RETRIES", 3)
 
-    def create_client(self):
+    def create_client(self, api_key: Optional[str] = None):
         """Create a chat model client.
 
         Returns:
             ChatOpenAI instance.
         """
+        key = api_key or settings.OPENAI_API_KEY or "sk-dummy-test-key"
         chat_client = ChatOpenAI(
             model_name=self.model_name,
             temperature=self.temperature,
-            api_key=settings.OPENAI_API_KEY,
+            api_key=key,
+            request_timeout=self.request_timeout,
+            max_retries=self.max_retries,
         )
         return chat_client
 
 
-default_chat_client = OpenAIChatClient().create_client()
+try:
+    default_chat_client = OpenAIChatClient().create_client()
+except Exception:
+    default_chat_client = None

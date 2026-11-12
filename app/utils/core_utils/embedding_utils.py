@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 
 from app.config.log_config import logger
@@ -29,6 +30,12 @@ def _build_fastembed_wrapper(model_name: str) -> Any:
 
         def embed_query(self, text: str) -> list[float]:
             return list(self.model.embed([text]))[0].tolist()
+
+        async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+            return await asyncio.to_thread(self.embed_documents, texts)
+
+        async def aembed_query(self, text: str) -> list[float]:
+            return await asyncio.to_thread(self.embed_query, text)
 
     return _FastEmbedWrapper(model_name)
 
@@ -100,6 +107,32 @@ class _LazyEmbeddingClient:
 
     def embed_query(self, text: str) -> list[float]:
         return self._get_client().embed_query(text)
+
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+        """Asynchronously compute embeddings for documents in a worker thread.
+
+        Prevents blocking the main asyncio event loop during vectorization.
+        """
+        client = self._get_client()
+        if hasattr(client, "aembed_documents") and callable(client.aembed_documents):
+            import inspect
+
+            if inspect.iscoroutinefunction(client.aembed_documents):
+                return await client.aembed_documents(texts)
+        return await asyncio.to_thread(self.embed_documents, texts)
+
+    async def aembed_query(self, text: str) -> list[float]:
+        """Asynchronously compute embedding for a query in a worker thread.
+
+        Prevents blocking the main asyncio event loop during vectorization.
+        """
+        client = self._get_client()
+        if hasattr(client, "aembed_query") and callable(client.aembed_query):
+            import inspect
+
+            if inspect.iscoroutinefunction(client.aembed_query):
+                return await client.aembed_query(text)
+        return await asyncio.to_thread(self.embed_query, text)
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self._get_client(), name)

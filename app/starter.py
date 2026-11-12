@@ -43,7 +43,11 @@ def start_application():
     # DATABASE INITIALIZATION
     if settings.USE_SQL:
         try:
-            init_db()
+            from app.utils.core_utils.migration_utils import run_database_migrations
+
+            migrated = run_database_migrations()
+            if not migrated:
+                init_db()
         except Exception as e:
             logger.exception("Database initialization failed: %s", e)
             raise
