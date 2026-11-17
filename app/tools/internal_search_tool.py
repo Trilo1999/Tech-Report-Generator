@@ -42,8 +42,11 @@ class InternalDocumentRetriever:
         filters: Optional[Dict[str, Any]] = None,
         limit: Optional[int] = None,
         min_score: Optional[float] = None,
+        tenant_id: Optional[str] = None,
+        use_hyde: bool = False,
+        use_multi_query: bool = False,
     ) -> List[Dict[str, Any]]:
-        """Search proprietary internal documentation in Qdrant with optional metadata filtering."""
+        """Search proprietary internal documentation in Qdrant with optional metadata filtering and tenant isolation."""
         if not query or not query.strip():
             return []
 
@@ -52,6 +55,41 @@ class InternalDocumentRetriever:
             min_score if min_score is not None else self.default_min_score
         )
 
+        if use_hyde or use_multi_query:
+            from app.utils.core_utils.hyde_utils import HyDEEngine
+
+            return HyDEEngine.retrieve_with_hyde_and_multi_query(
+                retriever_func=self._search_direct,
+                query=query,
+                limit=effective_limit,
+                use_hyde=use_hyde,
+                use_multi_query=use_multi_query,
+                filters=filters,
+                min_score=effective_min_score,
+                tenant_id=tenant_id,
+            )
+
+        return self._search_direct(
+            query=query,
+            filters=filters,
+            limit=effective_limit,
+            min_score=effective_min_score,
+            tenant_id=tenant_id,
+        )
+
+    def _search_direct(
+        self,
+        query: str,
+        filters: Optional[Dict[str, Any]] = None,
+        limit: Optional[int] = None,
+        min_score: Optional[float] = None,
+        tenant_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Direct single-query search against Qdrant."""
+        effective_limit = limit if limit is not None else self.default_limit
+        effective_min_score = (
+            min_score if min_score is not None else self.default_min_score
+        )
         query_filter = self.build_filter(filters)
         from app.services.core_services.qdrant_ingestion import (
             get_qdrant_client,
@@ -64,6 +102,7 @@ class InternalDocumentRetriever:
             query_filter=query_filter,
             limit=effective_limit,
             client=client,
+            tenant_id=tenant_id,
         )
 
         results: List[Dict[str, Any]] = []
@@ -91,6 +130,7 @@ class InternalDocumentRetriever:
                         "section": section,
                         "chunk_index": payload.get("chunk_index", 0),
                         "page": payload.get("page"),
+                        "tenant_id": payload.get("tenant_id", "default_tenant"),
                     },
                 }
             )
@@ -122,6 +162,18 @@ class InternalSearchInput(BaseModel):
         0.25,
         description="Minimum cosine similarity score threshold (default: 0.25).",
     )
+    tenant_id: Optional[str] = Field(
+        None,
+        description="Optional tenant or organization identifier for row-level security isolation.",
+    )
+    use_hyde: bool = Field(
+        False,
+        description="Whether to generate and retrieve using a synthetic hypothetical document passage.",
+    )
+    use_multi_query: bool = Field(
+        False,
+        description="Whether to expand the query into multiple diversified technical perspectives.",
+    )
 
 
 @tool("search_internal_documents", args_schema=InternalSearchInput)
@@ -130,6 +182,9 @@ def search_internal_documents_tool(
     filters: Optional[Dict[str, Any]] = None,
     limit: int = TOP_K_SEARCH_RESULTS,
     min_score: float = 0.25,
+    tenant_id: Optional[str] = None,
+    use_hyde: bool = False,
+    use_multi_query: bool = False,
 ) -> List[Dict[str, Any]]:
     """
     Search proprietary internal engineering standards, architectural decision records,
@@ -137,7 +192,13 @@ def search_internal_documents_tool(
     Returns ranked chunks tagged with [QDR-xx] identifiers.
     """
     return default_internal_retriever.search(
-        query=query, filters=filters, limit=limit, min_score=min_score
+        query=query,
+        filters=filters,
+        limit=limit,
+        min_score=min_score,
+        tenant_id=tenant_id,
+        use_hyde=use_hyde,
+        use_multi_query=use_multi_query,
     )
 
 
@@ -158,8 +219,17 @@ class InternalSearchTool(BaseTool):
         filters: Optional[Dict[str, Any]] = None,
         limit: int = TOP_K_SEARCH_RESULTS,
         min_score: float = 0.25,
+        tenant_id: Optional[str] = None,
+        use_hyde: bool = False,
+        use_multi_query: bool = False,
     ) -> List[Dict[str, Any]]:
-        """Execute internal document semantic search."""
+        """Execute internal document search."""
         return default_internal_retriever.search(
-            query=query, filters=filters, limit=limit, min_score=min_score
+            query=query,
+            filters=filters,
+            limit=limit,
+            min_score=min_score,
+            tenant_id=tenant_id,
+            use_hyde=use_hyde,
+            use_multi_query=use_multi_query,
         )

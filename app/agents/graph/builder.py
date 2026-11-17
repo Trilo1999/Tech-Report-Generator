@@ -5,7 +5,7 @@ from typing import Any, Optional
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from app.agents.graph.edges import route_review, route_sufficiency
+from app.agents.graph.edges import route_reflection, route_review, route_sufficiency
 from app.agents.graph.nodes import (
     draft_report,
     evaluate_evidence,
@@ -15,6 +15,7 @@ from app.agents.graph.nodes import (
     human_review,
     plan_research,
     revise_sections,
+    self_correct_report,
 )
 from app.agents.graph.orchestrator import (
     analytics_worker,
@@ -47,6 +48,7 @@ def build_research_graph() -> StateGraph:
     workflow.add_node("execute_calculations", execute_calculations)
     workflow.add_node("evaluate_evidence", evaluate_evidence)
     workflow.add_node("draft_report", draft_report)
+    workflow.add_node("self_correct_report", self_correct_report)
     workflow.add_node("human_review", human_review)
     workflow.add_node("revise_sections", revise_sections)
     workflow.add_node("export_report", export_report)
@@ -74,8 +76,16 @@ def build_research_graph() -> StateGraph:
         },
     )
 
-    # 4. Draft to Human-in-the-Loop review
-    workflow.add_edge("draft_report", "human_review")
+    # 4. Draft to automated reflection or Human-in-the-Loop review
+    workflow.add_conditional_edges(
+        "draft_report",
+        route_reflection,
+        {
+            "self_correct_report": "self_correct_report",
+            "human_review": "human_review",
+        },
+    )
+    workflow.add_edge("self_correct_report", "human_review")
 
     # 5. Conditional routing: Human Review outcome
     workflow.add_conditional_edges(

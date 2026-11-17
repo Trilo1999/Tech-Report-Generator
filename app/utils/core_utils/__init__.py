@@ -14,6 +14,7 @@ from app.utils.core_utils.faithfulness_verifier import (
 )
 from app.utils.core_utils.file_utils import FileProcessor
 from app.utils.core_utils.history_factory_utils import message_history_factory
+from app.utils.core_utils.hyde_utils import HyDEEngine
 from app.utils.core_utils.in_memory_utils import InMemoryHistory, in_memory_history
 from app.utils.core_utils.indexing_utils import Indexer
 from app.utils.core_utils.redis_utils import RedisHistory, redis_history
@@ -34,6 +35,7 @@ __all__ = [
     "embeddings_client",
     "FaithfulnessVerifier",
     "verify_draft_faithfulness",
+    "HyDEEngine",
     "TextProcessor",
     "FileProcessor",
     "Indexer",

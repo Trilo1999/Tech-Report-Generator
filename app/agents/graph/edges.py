@@ -27,6 +27,26 @@ def route_sufficiency(
     return "draft_report"
 
 
+def route_reflection(
+    state: ResearchState,
+) -> Literal["self_correct_report", "human_review"]:
+    """
+    Route execution following draft_report to determine if automated reflection is needed.
+
+    Returns:
+        "self_correct_report": If hallucination/unsupported claims are detected and reflections not exceeded.
+        "human_review": If report is sufficiently faithful or max reflections reached.
+    """
+    hallucination_detected = state.get("hallucination_detected", False)
+    unsupported = state.get("unsupported_claims", [])
+    reflection_count = state.get("reflection_count", 0)
+
+    if (hallucination_detected or len(unsupported) > 0) and reflection_count < 1:
+        return "self_correct_report"
+
+    return "human_review"
+
+
 def route_review(state: ResearchState) -> str:
     """
     Route execution following human review verdict.

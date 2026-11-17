@@ -301,8 +301,16 @@ class QdrantDocumentIngestor:
         except Exception:
             pass
 
-    def ingest(self, force_recreate: bool = True) -> int:
-        """Full ingestion pipeline for sample documentation."""
+    @classmethod
+    def get_tenant_collection_name(cls, base_collection: str, tenant_id: str) -> str:
+        """Derive an isolated collection name for hard physical multi-tenant partitioning."""
+        safe_tenant = re.sub(r"[^a-zA-Z0-9_]", "_", tenant_id.strip().lower())
+        return f"{base_collection}_t_{safe_tenant}"
+
+    def ingest(
+        self, force_recreate: bool = True, tenant_id: str = "default_tenant"
+    ) -> int:
+        """Full ingestion pipeline for sample documentation with tenant isolation."""
         client = self.get_client()
         self.create_or_recreate_collection(
             client, collection_name=self.collection_name, force_recreate=force_recreate
@@ -326,6 +334,7 @@ class QdrantDocumentIngestor:
                         "section": sec["section"],
                         "chunk_index": i,
                         "page": sec.get("page", 1),
+                        "tenant_id": tenant_id,
                     }
                 )
 
@@ -341,6 +350,7 @@ class QdrantDocumentIngestor:
                         "doc_type": sec["doc_type"],
                         "section": sec["section"],
                         "chunk_index": i,
+                        "tenant_id": tenant_id,
                     }
                 )
 
@@ -354,9 +364,7 @@ class QdrantDocumentIngestor:
 
         points: List[PointStruct] = []
         for i, (meta, vector) in enumerate(zip(all_chunks_metadata, embeddings)):
-            unique_key = (
-                f"{meta['source_file']}_{meta['section']}_{meta['chunk_index']}_{i}"
-            )
+            unique_key = f"{meta['tenant_id']}_{meta['source_file']}_{meta['section']}_{meta['chunk_index']}_{i}"
             point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, unique_key))
             points.append(
                 PointStruct(
@@ -381,16 +389,35 @@ class QdrantDocumentIngestor:
         query_filter: Optional[Filter] = None,
         limit: int = 5,
         client: Optional[QdrantClient] = None,
+        tenant_id: Optional[str] = None,
     ) -> List[ScoredPoint]:
-        """Search indexed documents using cosine similarity with optional metadata filter."""
+        """Search indexed documents using cosine similarity with optional metadata filter and tenant isolation."""
         cli = client if client is not None else self.get_client()
         model = self.get_embedding_model()
         query_vector = list(model.embed([query]))[0].tolist()
 
+        effective_filter = query_filter
+        if tenant_id:
+            from qdrant_client.models import FieldCondition, MatchValue
+
+            tenant_condition = FieldCondition(
+                key="tenant_id", match=MatchValue(value=str(tenant_id).strip())
+            )
+            if effective_filter is None:
+                effective_filter = Filter(must=[tenant_condition])
+            else:
+                must_conds = list(effective_filter.must or [])
+                must_conds.append(tenant_condition)
+                effective_filter = Filter(
+                    must=must_conds,
+                    should=effective_filter.should,
+                    must_not=effective_filter.must_not,
+                )
+
         response = cli.query_points(
             collection_name=self.collection_name,
             query=query_vector,
-            query_filter=query_filter,
+            query_filter=effective_filter,
             limit=limit,
         )
         return response.points
@@ -401,11 +428,14 @@ class QdrantDocumentIngestor:
         query_filter: Optional[Filter] = None,
         limit: int = 5,
         client: Optional[QdrantClient] = None,
+        tenant_id: Optional[str] = None,
     ) -> List[ScoredPoint]:
         """Search indexed documents asynchronously in a worker thread without blocking event loop."""
         import asyncio
 
-        return await asyncio.to_thread(self.search, query, query_filter, limit, client)
+        return await asyncio.to_thread(
+            self.search, query, query_filter, limit, client, tenant_id
+        )
 
     async def aingest(
         self,

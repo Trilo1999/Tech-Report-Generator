@@ -135,6 +135,8 @@ class ResearchState(TypedDict):
     unsupported_claims: List[str]
     faithfulness_score: NotRequired[float]
     hallucination_detected: NotRequired[bool]
+    reflection_count: NotRequired[int]
+    reflection_notes: NotRequired[List[str]]
     human_feedback: Optional[HumanFeedback]
     final_report_path: Optional[str]
     status: Literal[
@@ -144,6 +146,8 @@ class ResearchState(TypedDict):
         "calculating",
         "evaluating",
         "drafted",
+        "reflecting",
+        "self_corrected",
         "review_pending",
         "revised",
         "approved",
