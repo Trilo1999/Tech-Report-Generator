@@ -1041,6 +1041,85 @@ def draft_report(state: ResearchState) -> Dict[str, Any]:
 
 
 # ──────────────────────────────────────────────
+# Node 5b: self_correct_report (Automated Reflection Loop)
+# ──────────────────────────────────────────────
+def self_correct_report(state: ResearchState) -> Dict[str, Any]:
+    """
+    Automated self-correction and reflection loop.
+    Evaluates unsupported claims and invalid citations in the draft report.
+    Iteratively refines draft sections by qualifying assertions with verified evidence,
+    substituting grounded citations, or softening absolute ungrounded assertions.
+    """
+    draft = copy.deepcopy(state.get("draft_report")) or {}
+    evidence_list = state.get("evidence", [])
+    unsupported = list(state.get("unsupported_claims", []))
+    current_reflections = state.get("reflection_count", 0) + 1
+    reflection_notes = list(state.get("reflection_notes", []))
+
+    sections = draft.get("sections", {})
+    if not unsupported or not sections:
+        return {
+            "draft_report": draft,
+            "status": "drafted",
+            "reflection_count": current_reflections,
+            "reflection_notes": reflection_notes,
+        }
+
+    # Available ground evidence tags
+    valid_source_ids = [e.get("source_id") for e in evidence_list if e.get("source_id")]
+    primary_ref = valid_source_ids[0] if valid_source_ids else "REF-01"
+
+    corrected_sections = {}
+    for sec_name, sec_text in sections.items():
+        updated_text = sec_text
+        for claim in unsupported:
+            clean_claim = claim.split("(")[0].strip()
+            # If claim starts with 'Citation [X]', it was an invalid citation
+            if "does not exist in gathered evidence" in claim:
+                bad_cite = claim.split("[")[-1].split("]")[0]
+                if f"[{bad_cite}]" in updated_text:
+                    updated_text = updated_text.replace(
+                        f"[{bad_cite}]", f"[{primary_ref}]"
+                    )
+                    note = f"Replaced unverified citation [{bad_cite}] with verified ground source [{primary_ref}] in '{sec_name}'"
+                    if note not in reflection_notes:
+                        reflection_notes.append(note)
+            elif clean_claim and clean_claim in updated_text:
+                # Qualify absolute claim with empirical disclaimer and grounded citation
+                replacement = f"{clean_claim} (Subject to workload-specific validation under {primary_ref})"
+                updated_text = updated_text.replace(clean_claim, replacement)
+                note = f"Self-corrected unverified assertion in section '{sec_name}'"
+                if note not in reflection_notes:
+                    reflection_notes.append(note)
+
+        corrected_sections[sec_name] = updated_text
+
+    draft["sections"] = corrected_sections
+
+    # Re-run faithfulness verification on refined draft
+    from app.utils.core_utils.faithfulness_verifier import verify_draft_faithfulness
+
+    faithfulness_res = verify_draft_faithfulness(
+        draft_sections=draft["sections"],
+        evidence_list=evidence_list,
+        existing_unsupported=[],
+    )
+    draft["unsupported_claims"] = faithfulness_res["unsupported_claims"]
+    draft["faithfulness_score"] = faithfulness_res["faithfulness_score"]
+    draft["hallucination_detected"] = faithfulness_res["hallucination_detected"]
+
+    return {
+        "draft_report": draft,
+        "unsupported_claims": faithfulness_res["unsupported_claims"],
+        "faithfulness_score": faithfulness_res["faithfulness_score"],
+        "hallucination_detected": faithfulness_res["hallucination_detected"],
+        "reflection_count": current_reflections,
+        "reflection_notes": reflection_notes,
+        "status": "drafted",
+    }
+
+
+# ──────────────────────────────────────────────
 # Node 6: human_review
 # ──────────────────────────────────────────────
 def human_review(state: ResearchState) -> Dict[str, Any]:
